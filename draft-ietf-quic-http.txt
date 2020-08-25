@@ -2019,8 +2019,8 @@ Internet-Draft                   HTTP/3                      August 2020
 
 
    Push ID:  A variable-length integer that identifies the server push
-      operation.  A Push ID is used in push stream headers
-      (Section 4.4), CANCEL_PUSH frames (Section 7.2.3).
+      operation.  A Push ID is used in push stream headers (Section 4.4)
+      and CANCEL_PUSH frames (Section 7.2.3).
 
    Encoded Field Section:  QPACK-encoded request header fields for the
       promised response.  See [QPACK] for more details.
