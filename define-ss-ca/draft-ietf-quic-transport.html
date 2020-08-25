@@ -2545,7 +2545,7 @@ buffer capacity for the connection, by limiting the total bytes of stream data
 sent in STREAM frames on all streams.<a href="#section-4.1-2.2" class="pilcrow">¶</a>
 </li>
         </ul>
-<p id="section-4.1-3">Senders MUST not send data in excess of either limit.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+<p id="section-4.1-3">Senders MUST NOT send data in excess of either limit.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
 <p id="section-4.1-4">A receiver sets initial limits for all streams by sending transport parameters
 during the handshake (<a href="#transport-parameters" class="xref">Section 7.4</a>).  A receiver sends
 MAX_STREAM_DATA (<a href="#frame-max-stream-data" class="xref">Section 19.10</a>) or MAX_DATA (<a href="#frame-max-data" class="xref">Section 19.9</a>)
@@ -2558,9 +2558,9 @@ control offset to be advertised.<a href="#section-4.1-5" class="pilcrow">¶</a><
 <p id="section-4.1-6">A receiver can advertise a larger limit for a connection by sending a MAX_DATA
 frame, which indicates the maximum of the sum of the absolute byte offsets of
 all streams.  A receiver maintains a cumulative sum of bytes received on all
-streams, which is used to check for flow control violations. A receiver might
-use a sum of bytes consumed on all streams to determine the maximum data limit
-to be advertised.<a href="#section-4.1-6" class="pilcrow">¶</a></p>
+streams, which is used to check for violations of the advertised connection or
+stream data limits. A receiver might use a sum of bytes consumed on all streams
+to determine the maximum data limit to be advertised.<a href="#section-4.1-6" class="pilcrow">¶</a></p>
 <p id="section-4.1-7">Once a receiver advertises a limit for the connection or a stream, it MAY
 advertise a smaller limit, but this has no effect.<a href="#section-4.1-7" class="pilcrow">¶</a></p>
 <p id="section-4.1-8">A receiver MUST close the connection with a FLOW_CONTROL_ERROR error
@@ -2678,7 +2678,7 @@ unidirectional and bidirectional streams.<a href="#section-4.5-1" class="pilcrow
 value greater than 2^60, this would allow a maximum stream ID that cannot be
 expressed as a variable-length integer; see <a href="#integer-encoding" class="xref">Section 16</a>.
 If either is received, the connection MUST be closed immediately with a
-connection error of type STREAM_LIMIT_ERROR; see <a href="#immediate-close" class="xref">Section 10.2</a>.<a href="#section-4.5-2" class="pilcrow">¶</a></p>
+connection error of type FRAME_ENCODING_ERROR; see <a href="#immediate-close" class="xref">Section 10.2</a>.<a href="#section-4.5-2" class="pilcrow">¶</a></p>
 <p id="section-4.5-3">Endpoints MUST NOT exceed the limit set by their peer.  An endpoint that
 receives a frame with a stream ID exceeding the limit it has sent MUST treat
 this as a connection error of type STREAM_LIMIT_ERROR (<a href="#error-handling" class="xref">Section 11</a>).<a href="#section-4.5-3" class="pilcrow">¶</a></p>
@@ -3505,8 +3505,8 @@ not store a transport parameter it cannot process.<a href="#section-7.4.1-3" cla
 ack_delay_exponent, max_ack_delay, initial_source_connection_id,
 original_destination_connection_id, preferred_address,
 retry_source_connection_id, and stateless_reset_token. The client MUST use the
-server's new values in the handshake instead, and absent new values from the
-server, the default value.<a href="#section-7.4.1-4" class="pilcrow">¶</a></p>
+server's new values in the handshake instead; if the server does not provide new
+values, the default value is used.<a href="#section-7.4.1-4" class="pilcrow">¶</a></p>
 <p id="section-7.4.1-5">A client that attempts to send 0-RTT data MUST remember all other transport
 parameters used by the server. The server can remember these transport
 parameters, or store an integrity-protected copy of the values in the ticket
@@ -3912,8 +3912,10 @@ it can associate the peer's response with the corresponding PATH_CHALLENGE.<a hr
         <h3 id="name-path-validation-responses">
 <a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-path-validation-responses" class="section-name selfRef">Path Validation Responses</a>
         </h3>
-<p id="section-8.4-1">On receiving a PATH_CHALLENGE frame, an endpoint MUST respond immediately by
-echoing the data contained in the PATH_CHALLENGE frame in a PATH_RESPONSE frame.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
+<p id="section-8.4-1">On receiving a PATH_CHALLENGE frame, an endpoint MUST respond by echoing the
+data contained in the PATH_CHALLENGE frame in a PATH_RESPONSE frame.  An
+endpoint MUST NOT delay transmission of a packet containing a PATH_RESPONSE
+frame unless constrained by congestion control.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
 <p id="section-8.4-2">An endpoint MUST NOT send more than one PATH_RESPONSE frame in response to one
 PATH_CHALLENGE frame; see <a href="#retransmission-of-information" class="xref">Section 13.3</a>.  The peer is
 expected to send more PATH_CHALLENGE frames as necessary to evoke additional
@@ -4035,8 +4037,8 @@ Therefore, a migrating endpoint can send to its peer knowing that the peer is
 willing to receive at the peer's current address. Thus an endpoint can migrate
 to a new local address without first validating the peer's address.<a href="#section-9.2-2" class="pilcrow">¶</a></p>
 <p id="section-9.2-3">When migrating, the new path might not support the endpoint's current sending
-rate. Therefore, the endpoint resets its congestion controller, as described in
-<a href="#migration-cc" class="xref">Section 9.4</a>.<a href="#section-9.2-3" class="pilcrow">¶</a></p>
+rate. Therefore, the endpoint resets its congestion controller and RTT estimate,
+as described in <a href="#migration-cc" class="xref">Section 9.4</a>.<a href="#section-9.2-3" class="pilcrow">¶</a></p>
 <p id="section-9.2-4">The new path might not have the same ECN capability. Therefore, the endpoint
 verifies ECN capability as described in <a href="#ecn" class="xref">Section 13.4</a>.<a href="#section-9.2-4" class="pilcrow">¶</a></p>
 <p id="section-9.2-5">To establish reachability on the new path, an endpoint initiates path
@@ -4561,8 +4563,8 @@ the value of the Reason Phrase field and SHOULD use the APPLICATION_ERROR code
 when converting to a CONNECTION_CLOSE of type 0x1c.<a href="#section-10.2.1-3" class="pilcrow">¶</a></p>
 <p id="section-10.2.1-4">CONNECTION_CLOSE frames sent in multiple packet types can be coalesced into a
 single UDP datagram; see <a href="#packet-coalesce" class="xref">Section 12.2</a>.<a href="#section-10.2.1-4" class="pilcrow">¶</a></p>
-<p id="section-10.2.1-5">An endpoint might send a CONNECTION_CLOSE frame in an Initial packet or in
-response to unauthenticated information received in Initial or Handshake
+<p id="section-10.2.1-5">An endpoint can send a CONNECTION_CLOSE frame in an Initial packet.  This might
+be in response to unauthenticated information received in Initial or Handshake
 packets.  Such an immediate close might expose legitimate connections to a
 denial of service.  QUIC does not include defensive measures for on-path attacks
 during the handshake; see <a href="#handshake-dos" class="xref">Section 21.1</a>.  However, at the cost of reducing
@@ -6337,10 +6339,9 @@ the protocol fields are interpreted.<a href="#section-17.2-3.10" class="pilcrow"
   The byte following the version contains the length in bytes of the Destination
 Connection ID field that follows it.  This length is encoded as an 8-bit
 unsigned integer.  In QUIC version 1, this value MUST NOT exceed 20.
-Endpoints that receive a version 1 long header with a value larger than
-20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs
-from other QUIC versions in order to properly form a version negotiation
-packet.<a href="#section-17.2-3.12" class="pilcrow">¶</a>
+Endpoints that receive a version 1 long header with a value larger than 20
+MUST drop the packet.  In order to properly form a Version Negotiation packet,
+servers SHOULD be able to read longer connection IDs from other QUIC versions.<a href="#section-17.2-3.12" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-17.2-3.13">Destination Connection ID:</dt>
@@ -6355,10 +6356,10 @@ Length field, which indicates the length of this field.
   The byte following the Destination Connection ID contains the length in bytes
 of the Source Connection ID field that follows it.  This length is encoded as
 a 8-bit unsigned integer.  In QUIC version 1, this value MUST NOT exceed 20
-bytes. Endpoints that receive a version 1 long header with a value larger than
-20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs
-from other QUIC versions in order to properly form a version negotiation
-packet.<a href="#section-17.2-3.16" class="pilcrow">¶</a>
+bytes.  Endpoints that receive a version 1 long header with a value larger
+than 20 MUST drop the packet.  In order to properly form a Version Negotiation
+packet, servers SHOULD be able to read longer connection IDs from other QUIC
+versions.<a href="#section-17.2-3.16" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-17.2-3.17">Source Connection ID:</dt>
@@ -6997,20 +6998,19 @@ MUST ignore any incoming value. It is RECOMMENDED that endpoints set the spin
 bit to a random value either chosen independently for each packet or chosen
 independently for each connection ID.<a href="#section-17.3.1-4" class="pilcrow">¶</a></p>
 <p id="section-17.3.1-5">If the spin bit is enabled for the connection, the endpoint maintains a spin
-value and sets the spin bit in the short header to the currently stored
-value when a packet with a short header is sent out. The spin value is
-initialized to 0 in the endpoint at connection start.  Each endpoint also
-remembers the highest packet number seen from its peer on the connection.<a href="#section-17.3.1-5" class="pilcrow">¶</a></p>
-<p id="section-17.3.1-6">When a server receives a short header packet that increments the highest
-packet number seen by the server from the client, it sets the spin value to be
-equal to the spin bit in the received packet.<a href="#section-17.3.1-6" class="pilcrow">¶</a></p>
-<p id="section-17.3.1-7">When a client receives a short header packet that increments the highest
-packet number seen by the client from the server, it sets the spin value to the
-inverse of the spin bit in the received packet.<a href="#section-17.3.1-7" class="pilcrow">¶</a></p>
-<p id="section-17.3.1-8">An endpoint resets its spin value to zero when sending the first packet of a
-given connection with a new connection ID. This reduces the risk that transient
-spin bit state can be used to link flows across connection migration or ID
-change.<a href="#section-17.3.1-8" class="pilcrow">¶</a></p>
+value for each network path and sets the spin bit in the short header to the
+currently stored value when a packet with a short header is sent on that path.
+The spin value is initialized to 0 in the endpoint for each network path. Each
+endpoint also remembers the highest packet number seen from its peer on each
+path.<a href="#section-17.3.1-5" class="pilcrow">¶</a></p>
+<p id="section-17.3.1-6">When a server receives a short header packet that increases the highest packet
+number seen by the server from the client on a given network path, it sets the
+spin value for that path to be equal to the spin bit in the received packet.<a href="#section-17.3.1-6" class="pilcrow">¶</a></p>
+<p id="section-17.3.1-7">When a client receives a short header packet that increases the highest packet
+number seen by the client from the server on a given network path, it sets the
+spin value for that path to the inverse of the spin bit in the received packet.<a href="#section-17.3.1-7" class="pilcrow">¶</a></p>
+<p id="section-17.3.1-8">An endpoint resets the spin value for a network path to zero when changing the
+connection ID being used on that network path.<a href="#section-17.3.1-8" class="pilcrow">¶</a></p>
 <p id="section-17.3.1-9">With this mechanism, the server reflects the spin value received, while the
 client 'spins' it after one RTT. On-path observers can measure the time
 between two spin bit toggle events to estimate the end-to-end RTT of a
@@ -7113,7 +7113,7 @@ handshake.<a href="#section-18.2-4.6" class="pilcrow">¶</a>
 <dt id="section-18.2-4.7">max_udp_payload_size (0x03):</dt>
           <dd id="section-18.2-4.8">
   The maximum UDP payload size parameter is an integer value that limits the
-size of UDP payloads that the endpoint is willing to receive.  UDP packets
+size of UDP payloads that the endpoint is willing to receive.  UDP datagrams
 with payloads larger than this limit are not likely to be processed by the
 receiver.<a href="#section-18.2-4.8" class="pilcrow">¶</a>
 </dd>
@@ -8731,12 +8731,12 @@ restricting the length of time an endpoint is allowed to stay connected.<a href=
         <h3 id="name-stream-fragmentation-and-re">
 <a href="#section-21.5" class="section-number selfRef">21.5. </a><a href="#name-stream-fragmentation-and-re" class="section-name selfRef">Stream Fragmentation and Reassembly Attacks</a>
         </h3>
-<p id="section-21.5-1">An adversarial sender might intentionally send fragments of stream data in
-order to cause disproportionate receive buffer memory commitment and/or
+<p id="section-21.5-1">An adversarial sender might intentionally send fragments of stream data in an
+attempt to cause disproportionate receive buffer memory commitment and/or
 creation of a large and inefficient data structure.<a href="#section-21.5-1" class="pilcrow">¶</a></p>
-<p id="section-21.5-2">An adversarial receiver might intentionally not acknowledge packets
-containing stream data in order to force the sender to store the
-unacknowledged stream data for retransmission.<a href="#section-21.5-2" class="pilcrow">¶</a></p>
+<p id="section-21.5-2">An adversarial receiver might intentionally not acknowledge packets containing
+stream data in an attempt to force the sender to store the unacknowledged stream
+data for retransmission.<a href="#section-21.5-2" class="pilcrow">¶</a></p>
 <p id="section-21.5-3">The attack on receivers is mitigated if flow control windows correspond to
 available memory.  However, some receivers will over-commit memory and
 advertise flow control offsets in the aggregate that exceed actual available

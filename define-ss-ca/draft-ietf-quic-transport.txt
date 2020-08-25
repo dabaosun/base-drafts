@@ -1263,7 +1263,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
       receiver's buffer capacity for the connection, by limiting the
       total bytes of stream data sent in STREAM frames on all streams.
 
-   Senders MUST not send data in excess of either limit.
+   Senders MUST NOT send data in excess of either limit.
 
    A receiver sets initial limits for all streams by sending transport
    parameters during the handshake (Section 7.4).  A receiver sends
@@ -1294,9 +1294,9 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    MAX_DATA frame, which indicates the maximum of the sum of the
    absolute byte offsets of all streams.  A receiver maintains a
    cumulative sum of bytes received on all streams, which is used to
-   check for flow control violations.  A receiver might use a sum of
-   bytes consumed on all streams to determine the maximum data limit to
-   be advertised.
+   check for violations of the advertised connection or stream data
+   limits.  A receiver might use a sum of bytes consumed on all streams
+   to determine the maximum data limit to be advertised.
 
    Once a receiver advertises a limit for the connection or a stream, it
    MAY advertise a smaller limit, but this has no effect.
@@ -1445,7 +1445,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    with a value greater than 2^60, this would allow a maximum stream ID
    that cannot be expressed as a variable-length integer; see
    Section 16.  If either is received, the connection MUST be closed
-   immediately with a connection error of type STREAM_LIMIT_ERROR; see
+   immediately with a connection error of type FRAME_ENCODING_ERROR; see
    Section 10.2.
 
 
@@ -2481,8 +2481,8 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    ack_delay_exponent, max_ack_delay, initial_source_connection_id,
    original_destination_connection_id, preferred_address,
    retry_source_connection_id, and stateless_reset_token.  The client
-   MUST use the server's new values in the handshake instead, and absent
-   new values from the server, the default value.
+   MUST use the server's new values in the handshake instead; if the
+   server does not provide new values, the default value is used.
 
    A client that attempts to send 0-RTT data MUST remember all other
    transport parameters used by the server.  The server can remember
@@ -2988,9 +2988,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
 8.4.  Path Validation Responses
 
-   On receiving a PATH_CHALLENGE frame, an endpoint MUST respond
-   immediately by echoing the data contained in the PATH_CHALLENGE frame
-   in a PATH_RESPONSE frame.
+   On receiving a PATH_CHALLENGE frame, an endpoint MUST respond by
+   echoing the data contained in the PATH_CHALLENGE frame in a
+   PATH_RESPONSE frame.  An endpoint MUST NOT delay transmission of a
+   packet containing a PATH_RESPONSE frame unless constrained by
+   congestion control.
 
    An endpoint MUST NOT send more than one PATH_RESPONSE frame in
    response to one PATH_CHALLENGE frame; see Section 13.3.  The peer is
@@ -3017,14 +3019,14 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    initial timeout (that is, 2*kInitialRtt) as defined in
    [QUIC-RECOVERY] is RECOMMENDED.  That is:
 
-      validation_timeout = max(3*PTO, 6*kInitialRtt)
-
 
 
 Iyengar & Thomson       Expires 26 February 2021               [Page 54]
 
 Internet-Draft           QUIC Transport Protocol             August 2020
 
+
+      validation_timeout = max(3*PTO, 6*kInitialRtt)
 
    Note that the endpoint might receive packets containing other frames
    on the new path, but a PATH_RESPONSE frame with appropriate data is
@@ -3071,8 +3073,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    port or even a new outgoing IP address for a flow.  An endpoint MUST
    perform path validation (Section 8.2) if it detects any change to a
    peer's address, unless it has previously validated that address.
-
-
 
 
 
@@ -3140,7 +3140,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
    When migrating, the new path might not support the endpoint's current
    sending rate.  Therefore, the endpoint resets its congestion
-   controller, as described in Section 9.4.
+   controller and RTT estimate, as described in Section 9.4.
 
    The new path might not have the same ECN capability.  Therefore, the
    endpoint verifies ECN capability as described in Section 13.4.
@@ -3797,11 +3797,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    CONNECTION_CLOSE frames sent in multiple packet types can be
    coalesced into a single UDP datagram; see Section 12.2.
 
-   An endpoint might send a CONNECTION_CLOSE frame in an Initial packet
-   or in response to unauthenticated information received in Initial or
-   Handshake packets.  Such an immediate close might expose legitimate
-   connections to a denial of service.  QUIC does not include defensive
-   measures for on-path attacks during the handshake; see Section 21.1.
+   An endpoint can send a CONNECTION_CLOSE frame in an Initial packet.
+   This might be in response to unauthenticated information received in
+   Initial or Handshake packets.  Such an immediate close might expose
+   legitimate connections to a denial of service.  QUIC does not include
+   defensive measures for on-path attacks during the handshake; see
 
 
 
@@ -3810,12 +3810,12 @@ Iyengar & Thomson       Expires 26 February 2021               [Page 68]
 Internet-Draft           QUIC Transport Protocol             August 2020
 
 
-   However, at the cost of reducing feedback about errors for legitimate
-   peers, some forms of denial of service can be made more difficult for
-   an attacker if endpoints discard illegal packets rather than
-   terminating a connection with CONNECTION_CLOSE.  For this reason,
-   endpoints MAY discard packets rather than immediately close if errors
-   are detected in packets that lack authentication.
+   Section 21.1.  However, at the cost of reducing feedback about errors
+   for legitimate peers, some forms of denial of service can be made
+   more difficult for an attacker if endpoints discard illegal packets
+   rather than terminating a connection with CONNECTION_CLOSE.  For this
+   reason, endpoints MAY discard packets rather than immediately close
+   if errors are detected in packets that lack authentication.
 
    An endpoint that has not established state, such as a server that
    detects an error in an Initial packet, does not enter the closing
@@ -5845,9 +5845,9 @@ Internet-Draft           QUIC Transport Protocol             August 2020
       field that follows it.  This length is encoded as an 8-bit
       unsigned integer.  In QUIC version 1, this value MUST NOT exceed
       20.  Endpoints that receive a version 1 long header with a value
-      larger than 20 MUST drop the packet.  Servers SHOULD be able to
-      read longer connection IDs from other QUIC versions in order to
-      properly form a version negotiation packet.
+      larger than 20 MUST drop the packet.  In order to properly form a
+      Version Negotiation packet, servers SHOULD be able to read longer
+      connection IDs from other QUIC versions.
 
    Destination Connection ID:  The Destination Connection ID field
       follows the Destination Connection ID Length field, which
@@ -5859,9 +5859,9 @@ Internet-Draft           QUIC Transport Protocol             August 2020
       Connection ID field that follows it.  This length is encoded as a
       8-bit unsigned integer.  In QUIC version 1, this value MUST NOT
       exceed 20 bytes.  Endpoints that receive a version 1 long header
-      with a value larger than 20 MUST drop the packet.  Servers SHOULD
-      be able to read longer connection IDs from other QUIC versions in
-      order to properly form a version negotiation packet.
+      with a value larger than 20 MUST drop the packet.  In order to
+      properly form a Version Negotiation packet, servers SHOULD be able
+      to read longer connection IDs from other QUIC versions.
 
    Source Connection ID:  The Source Connection ID field follows the
       Source Connection ID Length field, which indicates the length of
@@ -6530,21 +6530,21 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    connection ID.
 
    If the spin bit is enabled for the connection, the endpoint maintains
-   a spin value and sets the spin bit in the short header to the
-   currently stored value when a packet with a short header is sent out.
-   The spin value is initialized to 0 in the endpoint at connection
-   start.  Each endpoint also remembers the highest packet number seen
-   from its peer on the connection.
+   a spin value for each network path and sets the spin bit in the short
+   header to the currently stored value when a packet with a short
+   header is sent on that path.  The spin value is initialized to 0 in
+   the endpoint for each network path.  Each endpoint also remembers the
+   highest packet number seen from its peer on each path.
 
-   When a server receives a short header packet that increments the
-   highest packet number seen by the server from the client, it sets the
-   spin value to be equal to the spin bit in the received packet.
+   When a server receives a short header packet that increases the
+   highest packet number seen by the server from the client on a given
+   network path, it sets the spin value for that path to be equal to the
+   spin bit in the received packet.
 
-   When a client receives a short header packet that increments the
-   highest packet number seen by the client from the server, it sets the
-   spin value to the inverse of the spin bit in the received packet.
-
-
+   When a client receives a short header packet that increases the
+   highest packet number seen by the client from the server on a given
+   network path, it sets the spin value for that path to the inverse of
+   the spin bit in the received packet.
 
 
 
@@ -6554,10 +6554,8 @@ Iyengar & Thomson       Expires 26 February 2021              [Page 117]
 Internet-Draft           QUIC Transport Protocol             August 2020
 
 
-   An endpoint resets its spin value to zero when sending the first
-   packet of a given connection with a new connection ID.  This reduces
-   the risk that transient spin bit state can be used to link flows
-   across connection migration or ID change.
+   An endpoint resets the spin value for a network path to zero when
+   changing the connection ID being used on that network path.
 
    With this mechanism, the server reflects the spin value received,
    while the client 'spins' it after one RTT.  On-path observers can
@@ -6605,6 +6603,8 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
 
 
+
+
 Iyengar & Thomson       Expires 26 February 2021              [Page 118]
 
 Internet-Draft           QUIC Transport Protocol             August 2020
@@ -6643,8 +6643,9 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
    max_udp_payload_size (0x03):  The maximum UDP payload size parameter
       is an integer value that limits the size of UDP payloads that the
-      endpoint is willing to receive.  UDP packets with payloads larger
-      than this limit are not likely to be processed by the receiver.
+      endpoint is willing to receive.  UDP datagrams with payloads
+      larger than this limit are not likely to be processed by the
+      receiver.
 
       The default for this parameter is the maximum permitted UDP
       payload of 65527.  Values below 1200 are invalid.
@@ -6656,7 +6657,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
       packets.
 
    initial_max_data (0x04):  The initial maximum data parameter is an
-
 
 
 
@@ -8143,11 +8143,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 21.5.  Stream Fragmentation and Reassembly Attacks
 
    An adversarial sender might intentionally send fragments of stream
-   data in order to cause disproportionate receive buffer memory
+   data in an attempt to cause disproportionate receive buffer memory
    commitment and/or creation of a large and inefficient data structure.
 
    An adversarial receiver might intentionally not acknowledge packets
-   containing stream data in order to force the sender to store the
+   containing stream data in an attempt to force the sender to store the
    unacknowledged stream data for retransmission.
 
    The attack on receivers is mitigated if flow control windows
