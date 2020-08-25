@@ -2988,9 +2988,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
 8.4.  Path Validation Responses
 
-   On receiving a PATH_CHALLENGE frame, an endpoint MUST respond
-   immediately by echoing the data contained in the PATH_CHALLENGE frame
-   in a PATH_RESPONSE frame.
+   On receiving a PATH_CHALLENGE frame, an endpoint MUST respond by
+   echoing the data contained in the PATH_CHALLENGE frame in a
+   PATH_RESPONSE frame.  An endpoint MUST NOT delay transmission of a
+   packet containing a PATH_RESPONSE frame unless constrained by
+   congestion control.
 
    An endpoint MUST NOT send more than one PATH_RESPONSE frame in
    response to one PATH_CHALLENGE frame; see Section 13.3.  The peer is
@@ -3017,14 +3019,14 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    initial timeout (that is, 2*kInitialRtt) as defined in
    [QUIC-RECOVERY] is RECOMMENDED.  That is:
 
-      validation_timeout = max(3*PTO, 6*kInitialRtt)
-
 
 
 Iyengar & Thomson       Expires 26 February 2021               [Page 54]
 
 Internet-Draft           QUIC Transport Protocol             August 2020
 
+
+      validation_timeout = max(3*PTO, 6*kInitialRtt)
 
    Note that the endpoint might receive packets containing other frames
    on the new path, but a PATH_RESPONSE frame with appropriate data is
@@ -3071,8 +3073,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    port or even a new outgoing IP address for a flow.  An endpoint MUST
    perform path validation (Section 8.2) if it detects any change to a
    peer's address, unless it has previously validated that address.
-
-
 
 
 
