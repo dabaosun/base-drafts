@@ -1585,9 +1585,10 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    needed to route to the correct endpoint.  However, multiplexing
    connections on the same local IP address and port while using zero-
    length connection IDs will cause failures in the presence of peer
-   connection migration, NAT rebinding, and client port reuse; and
-   therefore MUST NOT be done unless an endpoint is certain that those
-   protocol features are not in use.
+   connection migration, NAT rebinding, and client port reuse.  An
+   endpoint MUST NOT use the same IP address and port for multiple
+   connections with zero-length connection IDs, unless it is certain
+   that those protocol features are not in use.
 
    When an endpoint uses a non-zero-length connection ID, it needs to
    ensure that the peer has a supply of connection IDs from which to
@@ -1617,7 +1618,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    When an endpoint issues a connection ID, it MUST accept packets that
    carry this connection ID for the duration of the connection or until
    its peer invalidates the connection ID via a RETIRE_CONNECTION_ID
-   frame (Section 19.16).  Connection IDs that are issued and not
 
 
 
@@ -1626,6 +1626,7 @@ Iyengar & Thomson       Expires 27 February 2021               [Page 29]
 Internet-Draft           QUIC Transport Protocol             August 2020
 
 
+   frame (Section 19.16).  Connection IDs that are issued and not
    retired are considered active; any active connection ID is valid for
    use with the current connection at any time, in any packet type.
    This includes the connection ID issued by the server via the
@@ -1652,12 +1653,12 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    connection ID.  If an endpoint provided fewer connection IDs than the
    peer's active_connection_id_limit, it MAY supply a new connection ID
    when it receives a packet with a previously unused connection ID.  An
-   endpoint MAY limit the frequency or the total number of connection
-   IDs issued for each connection to avoid the risk of running out of
-   connection IDs; see Section 10.3.2.  An endpoint MAY also limit the
-   issuance of connection IDs to reduce the amount of per-path state it
-   maintains, such as path validation status, as its peer might interact
-   with it over as many paths as there are issued connection IDs.
+   endpoint MAY limit the total number of connection IDs issued for each
+   connection to avoid the risk of running out of connection IDs; see
+   Section 10.3.2.  An endpoint MAY also limit the issuance of
+   connection IDs to reduce the amount of per-path state it maintains,
+   such as path validation status, as its peer might interact with it
+   over as many paths as there are issued connection IDs.
 
    An endpoint that initiates migration and requires non-zero-length
    connection IDs SHOULD ensure that the pool of connection IDs
@@ -1671,7 +1672,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    another available one at any time during the connection.  An endpoint
    consumes connection IDs in response to a migrating peer; see
    Section 9.5 for more.
-
 
 
 
@@ -1781,8 +1781,8 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    ID that matches a value the client selects.  Clients that choose to
    receive zero-length connection IDs can use the local address and port
    to identify a connection.  Packets that do not match an existing
-   connection are discarded.
-
+   connection, based on Destination Connection ID or, if this value is
+   zero-length, local IP address and port, are discarded.
 
 
 
@@ -2093,7 +2093,8 @@ Internet-Draft           QUIC Transport Protocol             August 2020
       ALPN [RFC7301] for this purpose)
 
    An endpoint verifies support for Explicit Congestion Notification
-   (ECN) in the first packets it sends, as described in Section 13.4.2.
+   (ECN) by observing whether the ACK frames acknowledging the first
+   packets it sends carry ECN counts, as described in Section 13.4.2.
 
    The CRYPTO frame can be sent in different packet number spaces
    (Section 12.3).  The offsets used by CRYPTO frames to ensure ordered
@@ -2120,7 +2121,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    1-RTT (*)              <=========>                1-RTT (*)
 
                     Figure 4: Simplified QUIC Handshake
-
 
 
 
@@ -2473,9 +2473,10 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    parameters are remembered, as some do not apply to future connections
    or they have no effect on use of 0-RTT.
 
-   The definition of new transport parameters (Section 7.4.2) MUST
-   specify whether they MUST, MAY, or MUST NOT be stored for 0-RTT.  A
-   client need not store a transport parameter it cannot process.
+   The definition of a new transport parameter (Section 7.4.2) MUST
+   specify whether storing the transport parameter for 0-RTT is
+   mandatory, optional, or prohibited.  A client need not store a
+   transport parameter it cannot process.
 
    A client MUST NOT use remembered values for the following parameters:
    ack_delay_exponent, max_ack_delay, initial_source_connection_id,
@@ -2511,9 +2512,8 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
    *  initial_max_streams_uni
 
-   Omitting or setting a zero value for certain transport parameters can
-   result in 0-RTT data being enabled, but not usable.  The applicable
-   subset of transport parameters that permit sending of application
+
+
 
 
 
@@ -2522,6 +2522,9 @@ Iyengar & Thomson       Expires 27 February 2021               [Page 45]
 Internet-Draft           QUIC Transport Protocol             August 2020
 
 
+   Omitting or setting a zero value for certain transport parameters can
+   result in 0-RTT data being enabled, but not usable.  The applicable
+   subset of transport parameters that permit sending of application
    data SHOULD be set to non-zero values for 0-RTT.  This includes
    initial_max_data and either initial_max_streams_bidi and
    initial_max_stream_data_bidi_remote, or initial_max_streams_uni and
@@ -2567,9 +2570,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    of order.  Because there is no flow control of CRYPTO frames, an
    endpoint could potentially force its peer to buffer an unbounded
    amount of data.
-
-
-
 
 
 
@@ -2623,7 +2623,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    Handshake packet from the client, it can consider the client address
    to have been validated.
 
-   Additionally, a server MAY consider the client address valididated if
+   Additionally, a server MAY consider the client address validated if
    the client uses a connection ID chosen by the server and the
    connection ID contains at least 64 bits of entropy.
 
@@ -3266,10 +3266,10 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    path via the attacker.  This places the attacker on path, giving it
    the ability to observe or drop all subsequent packets.
 
-   This style of attack relies on the attacker using a path that is
-   approximately as fast as the direct path between endpoints.  The
-   attack is more reliable if relatively few packets are sent or if
-   packet loss coincides with the attempted attack.
+   This style of attack relies on the attacker using a path that has
+   approximately the same characteristics as the direct path between
+   endpoints.  The attack is more reliable if relatively few packets are
+   sent or if packet loss coincides with the attempted attack.
 
    A non-probing packet received on the original path that increases the
    maximum received packet number will cause the endpoint to move back
@@ -3374,7 +3374,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    any other entity.
 
    At any time, endpoints MAY change the Destination Connection ID they
-   send to a value that has not been used on another path.
+   transmit with to a value that has not been used on another path.
 
    An endpoint MUST NOT reuse a connection ID when sending from more
    than one local address, for example when initiating connection
@@ -3451,10 +3451,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    stability.  This section describes the protocol for migrating a
    connection to a preferred server address.
 
-   Migrating a connection to a new server address mid-connection is left
-   for future work.  If a client receives packets from a new server
-   address when the client has not initiated a migration to that
-   address, the client SHOULD discard these packets.
+   Migrating a connection to a new server address mid-connection is not
+   supported by the version of QUIC specified in this document.  If a
+   client receives packets from a new server address when the client has
+   not initiated a migration to that address, the client SHOULD discard
+   these packets.
 
 9.6.1.  Communicating a Preferred Address
 
@@ -3464,7 +3465,6 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    Servers MAY communicate a preferred address of each address family
    (IPv4 and IPv6) to allow clients to pick the one most suited to their
    network attachment.
-
 
 
 
@@ -3480,11 +3480,11 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    unused active connection ID, taken from either the preferred_address
    transport parameter or a NEW_CONNECTION_ID frame.
 
-   If path validation succeeds, the client SHOULD immediately begin
-   sending all future packets to the new server address using the new
-   connection ID and discontinue use of the old server address.  If path
-   validation fails, the client MUST continue sending all future packets
-   to the server's original IP address.
+   As soon as path validation succeeds, the client SHOULD begin sending
+   all future packets to the new server address using the new connection
+   ID and discontinue use of the old server address.  If path validation
+   fails, the client MUST continue sending all future packets to the
+   server's original IP address.
 
 9.6.2.  Responding to Connection Migration
 
@@ -5191,16 +5191,16 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    Endpoints react to congestion by reducing their sending rate in
    response, as described in [QUIC-RECOVERY].
 
+   Note that supporting ECN requires being able to set and read the ECN
+   codepoints in the IP headers of datagrams carrying QUIC packets.  On
+   platforms where this is not possible, QUIC cannot support ECN.
+
    To use ECN, QUIC endpoints first determine whether a path supports
    ECN marking and the peer is able to access the ECN codepoint in the
    IP header.  A network path does not support ECN if ECN marked packets
    get dropped or ECN markings are rewritten on the path.  An endpoint
    validates the use of ECN on the path, both during connection
    establishment and when migrating to a new path (Section 9).
-
-
-
-
 
 
 
@@ -5216,9 +5216,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    enabled endpoint that can access the ECN codepoints from the
    enclosing IP packet increases the corresponding ECT(0), ECT(1), or CE
    count, and includes these counts in subsequent ACK frames; see
-   Section 13.2 and Section 19.3.  Note that this requires being able to
-   read the ECN codepoints from the enclosing IP packet, which is not
-   possible on all platforms.
+   Section 13.2 and Section 19.3.
 
    An IP packet that results in no QUIC packets being processed does not
    increase ECN counts.  A QUIC packet detected by a receiver as a
@@ -5248,13 +5246,15 @@ Internet-Draft           QUIC Transport Protocol             August 2020
    It is possible for faulty network devices to corrupt or erroneously
    drop packets with ECN markings.  To provide robust connectivity in
    the presence of such devices, each endpoint independently validates
-   ECN counts and disables ECN if errors are detected.
+   ECN counts and disables ECN if the path is not showing consistent
+   support for ECN.
 
    Endpoints validate ECN for packets sent on each network path
    independently.  An endpoint thus validates ECN on new connection
    establishment, when switching to a server's preferred address, and on
    active connection migration to a new path.  Appendix B describes one
    possible algorithm for testing paths for ECN support.
+
 
 
 
