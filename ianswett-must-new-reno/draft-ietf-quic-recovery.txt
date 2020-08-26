@@ -1083,19 +1083,13 @@ Internet-Draft             QUIC Loss Detection               August 2020
    an ECN-CE mark is received.  A recovery period ends when a packet
    sent during the recovery period is acknowledged.
 
-   A sender that is already in a recovery period stays in it and does
-   not re-enter it.
-
-   On entering recovery, a sender MUST do the following:
-
-   *  set the slow start threshold to half the value of the congestion
-      window at the moment that loss is detected, and
-
-   *  set the congestion window to the new value of the slow start
-      threshold.  Implementations MAY set the congestion window
-      immediately on detecting loss or use other mechanisms, such as
-      Proportional Rate Reduction ([RFC6937]), to reduce it over the
-      recovery period.
+   On entering a recovery period, a sender MUST set the slow start
+   threshold to half the value of the congestion window at the moment
+   that loss is detected.  The congestion window MUST be set to the
+   reduced value of the slow start threshold before exiting the recovery
+   period.  Implementations MAY set the congestion window immediately on
+   entering a recovery period or use other mechanisms, such as
+   Proportional Rate Reduction ([PRR]), to reduce it more gradually.
 
    The recovery period aims to limit congestion window reduction to once
    per round trip.  Therefore during recovery, the congestion window
@@ -1109,6 +1103,12 @@ Internet-Draft             QUIC Loss Detection               August 2020
    [RFC6675].  If further packets are lost while the sender is in
    recovery, sending any packets in response MUST obey the congestion
    window limit.
+
+
+
+
+
+
 
 
 
@@ -1425,6 +1425,10 @@ Internet-Draft             QUIC Loss Detection               August 2020
               Refining TCP Congestion Control", ACM SIGCOMM , August
               1996.
 
+   [PRR]      Mathis, M., Dukkipati, N., and Y. Cheng, "Proportional
+              Rate Reduction for TCP", RFC 6937, DOI 10.17487/RFC6937,
+              May 2013, <https://www.rfc-editor.org/info/rfc6937>.
+
    [RACK]     Cheng, Y., Cardwell, N., Dukkipati, N., and P. Jha, "The
               RACK-TLP loss detection algorithm for TCP", Work in
               Progress, Internet-Draft, draft-ietf-tcpm-rack-10, 22
@@ -1445,10 +1449,6 @@ Internet-Draft             QUIC Loss Detection               August 2020
               Spurious Retransmission Timeouts with TCP", RFC 5682,
               DOI 10.17487/RFC5682, September 2009,
               <https://www.rfc-editor.org/info/rfc5682>.
-
-
-
-
 
 
 
@@ -1485,10 +1485,6 @@ Internet-Draft             QUIC Loss Detection               August 2020
               DOI 10.17487/RFC6928, April 2013,
               <https://www.rfc-editor.org/info/rfc6928>.
 
-   [RFC6937]  Mathis, M., Dukkipati, N., and Y. Cheng, "Proportional
-              Rate Reduction for TCP", RFC 6937, DOI 10.17487/RFC6937,
-              May 2013, <https://www.rfc-editor.org/info/rfc6937>.
-
    [RFC7661]  Fairhurst, G., Sathiaseelan, A., and R. Secchi, "Updating
               TCP to Support Rate-Limited Traffic", RFC 7661,
               DOI 10.17487/RFC7661, October 2015,
@@ -1504,6 +1500,10 @@ Internet-Draft             QUIC Loss Detection               August 2020
               RFC 8312, DOI 10.17487/RFC8312, February 2018,
               <https://www.rfc-editor.org/info/rfc8312>.
 
+   [RFC8511]  Khademi, N., Welzl, M., Armitage, G., and G. Fairhurst,
+              "TCP Alternative Backoff with ECN (ABE)", RFC 8511,
+              DOI 10.17487/RFC8511, December 2018,
+              <https://www.rfc-editor.org/info/rfc8511>.
 
 
 
@@ -1513,11 +1513,6 @@ Iyengar & Swett         Expires 27 February 2021               [Page 27]
 
 Internet-Draft             QUIC Loss Detection               August 2020
 
-
-   [RFC8511]  Khademi, N., Welzl, M., Armitage, G., and G. Fairhurst,
-              "TCP Alternative Backoff with ECN (ABE)", RFC 8511,
-              DOI 10.17487/RFC8511, December 2018,
-              <https://www.rfc-editor.org/info/rfc8511>.
 
 Appendix A.  Loss Recovery Pseudocode
 
@@ -1562,6 +1557,11 @@ A.2.  Constants of Interest
    Constants used in loss recovery are based on a combination of RFCs,
    papers, and common practice.
 
+   kPacketThreshold:  Maximum reordering in packets before packet
+      threshold loss detection considers a packet lost.  The value
+      recommended in Section 6.1.1 is 3.
+
+   kTimeThreshold:  Maximum reordering in time before time threshold
 
 
 
@@ -1570,11 +1570,6 @@ Iyengar & Swett         Expires 27 February 2021               [Page 28]
 Internet-Draft             QUIC Loss Detection               August 2020
 
 
-   kPacketThreshold:  Maximum reordering in packets before packet
-      threshold loss detection considers a packet lost.  The value
-      recommended in Section 6.1.1 is 3.
-
-   kTimeThreshold:  Maximum reordering in time before time threshold
       loss detection considers a packet lost.  Specified as an RTT
       multiplier.  The value recommended in Section 6.1.2 is 9/8.
 
@@ -1618,6 +1613,11 @@ A.3.  Variables of interest
    loss_detection_timer:  Multi-modal timer used for loss detection.
 
    pto_count:  The number of times a PTO has been sent without receiving
+      an ack.
+
+   time_of_last_ack_eliciting_packet[kPacketNumberSpace]:  The time the
+      most recent ack-eliciting packet was sent.
+
 
 
 
@@ -1625,11 +1625,6 @@ Iyengar & Swett         Expires 27 February 2021               [Page 29]
 
 Internet-Draft             QUIC Loss Detection               August 2020
 
-
-      an ack.
-
-   time_of_last_ack_eliciting_packet[kPacketNumberSpace]:  The time the
-      most recent ack-eliciting packet was sent.
 
    largest_acked_packet[kPacketNumberSpace]:  The largest packet number
       acknowledged in the packet number space so far.
@@ -1666,6 +1661,11 @@ A.5.  On Sending a Packet
    Appendix A.1.1.
 
    Pseudocode for OnPacketSent follows:
+
+
+
+
+
 
 
 
