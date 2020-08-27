@@ -96,11 +96,11 @@ Table of Contents
      4.3.  HTTP Upgrade  . . . . . . . . . . . . . . . . . . . . . .  20
      4.4.  Server Push . . . . . . . . . . . . . . . . . . . . . . .  20
    5.  Connection Closure  . . . . . . . . . . . . . . . . . . . . .  22
-     5.1.  Idle Connections  . . . . . . . . . . . . . . . . . . . .  23
+     5.1.  Idle Connections  . . . . . . . . . . . . . . . . . . . .  22
      5.2.  Connection Shutdown . . . . . . . . . . . . . . . . . . .  23
      5.3.  Immediate Application Closure . . . . . . . . . . . . . .  25
      5.4.  Transport Closure . . . . . . . . . . . . . . . . . . . .  25
-   6.  Stream Mapping and Usage  . . . . . . . . . . . . . . . . . .  26
+   6.  Stream Mapping and Usage  . . . . . . . . . . . . . . . . . .  25
      6.1.  Bidirectional Streams . . . . . . . . . . . . . . . . . .  26
      6.2.  Unidirectional Streams  . . . . . . . . . . . . . . . . .  26
        6.2.1.  Control Streams . . . . . . . . . . . . . . . . . . .  28
@@ -1108,12 +1108,12 @@ Internet-Draft                   HTTP/3                      August 2020
    Push ID is used to refer to the push in various contexts throughout
    the lifetime of the connection.
 
-
-
-
-
-
-
+   The Push ID space begins at zero, and ends at a maximum value set by
+   the MAX_PUSH_ID frame; see Section 7.2.7.  In particular, a server is
+   not able to push until after the client sends a MAX_PUSH_ID frame.  A
+   client sends MAX_PUSH_ID frames to control the number of pushes that
+   a server can promise.  A server SHOULD use Push IDs sequentially,
+   beginning from zero.  A client MUST treat receipt of a push stream as
 
 
 
@@ -1122,14 +1122,9 @@ Bishop                  Expires 28 February 2021               [Page 20]
 Internet-Draft                   HTTP/3                      August 2020
 
 
-   The Push ID space begins at zero, and ends at a maximum value set by
-   the MAX_PUSH_ID frame; see Section 7.2.7.  In particular, a server is
-   not able to push until after the client sends a MAX_PUSH_ID frame.  A
-   client sends MAX_PUSH_ID frames to control the number of pushes that
-   a server can promise.  A server SHOULD use Push IDs sequentially,
-   beginning from zero.  A client MUST treat receipt of a push stream
-   with a Push ID that is greater than the maximum Push ID as a
-   connection error of type H3_ID_ERROR.
+   a connection error of type H3_ID_ERROR when no MAX_PUSH_ID frame has
+   been sent or when the stream references a Push ID that is greater
+   than the maximum Push ID.
 
    The Push ID is used in one or more PUSH_PROMISE frames
    (Section 7.2.5) that carry the header section of the request message.
@@ -1170,6 +1165,11 @@ Internet-Draft                   HTTP/3                      August 2020
    Each pushed response is associated with one or more client requests.
    The push is associated with the request stream on which the
    PUSH_PROMISE frame was received.  The same server push can be
+   associated with additional client requests using a PUSH_PROMISE frame
+   with the same Push ID on multiple request streams.  These
+   associations do not affect the operation of the protocol, but MAY be
+   considered by user agents when deciding how to use pushed resources.
+
 
 
 
@@ -1177,11 +1177,6 @@ Bishop                  Expires 28 February 2021               [Page 21]
 
 Internet-Draft                   HTTP/3                      August 2020
 
-
-   associated with additional client requests using a PUSH_PROMISE frame
-   with the same Push ID on multiple request streams.  These
-   associations do not affect the operation of the protocol, but MAY be
-   considered by user agents when deciding how to use pushed resources.
 
    Ordering of a PUSH_PROMISE frame in relation to certain parts of the
    response is important.  The server SHOULD send PUSH_PROMISE frames
@@ -1220,20 +1215,6 @@ Internet-Draft                   HTTP/3                      August 2020
    and responses over time until the connection is closed.  Connection
    closure can happen in any of several different ways.
 
-
-
-
-
-
-
-
-
-
-Bishop                  Expires 28 February 2021               [Page 22]
-
-Internet-Draft                   HTTP/3                      August 2020
-
-
 5.1.  Idle Connections
 
    Each QUIC endpoint declares an idle timeout during the handshake.  If
@@ -1243,6 +1224,15 @@ Internet-Draft                   HTTP/3                      August 2020
    for new requests if the existing connection has been idle for longer
    than the server's advertised idle timeout, and SHOULD do so if
    approaching the idle timeout.
+
+
+
+
+
+Bishop                  Expires 28 February 2021               [Page 22]
+
+Internet-Draft                   HTTP/3                      August 2020
+
 
    HTTP clients are expected to request that the transport keep
    connections open while there are responses outstanding for requests
@@ -1283,13 +1273,6 @@ Internet-Draft                   HTTP/3                      August 2020
 
    Some requests or pushes might already be in transit:
 
-
-
-Bishop                  Expires 28 February 2021               [Page 23]
-
-Internet-Draft                   HTTP/3                      August 2020
-
-
    *  Upon receipt of a GOAWAY frame, if the client has already sent
       requests with a Stream ID greater than or equal to the identifier
       contained in the GOAWAY frame, those requests will not be
@@ -1297,6 +1280,15 @@ Internet-Draft                   HTTP/3                      August 2020
       different connection.  A client that is unable to retry requests
       loses all requests that are in flight when the server closes the
       connection.
+
+
+
+
+
+Bishop                  Expires 28 February 2021               [Page 23]
+
+Internet-Draft                   HTTP/3                      August 2020
+
 
       Requests on Stream IDs less than the Stream ID in a GOAWAY frame
       from the server might have been processed; their status cannot be
@@ -1338,6 +1330,14 @@ Internet-Draft                   HTTP/3                      August 2020
    A client has more flexibility in the value it chooses for the Push ID
    in a GOAWAY that it sends.  A value of 2^62 - 1 indicates that the
    server can continue fulfilling pushes that have already been
+   promised.  A smaller value indicates the client will reject pushes
+   with Push IDs greater than or equal to this value.  Like the server,
+   the client MAY send subsequent GOAWAY frames so long as the specified
+   Push ID is no greater than any previously sent value.
+
+
+
+
 
 
 
@@ -1345,11 +1345,6 @@ Bishop                  Expires 28 February 2021               [Page 24]
 
 Internet-Draft                   HTTP/3                      August 2020
 
-
-   promised.  A smaller value indicates the client will reject pushes
-   with Push IDs greater than or equal to this value.  Like the server,
-   the client MAY send subsequent GOAWAY frames so long as the specified
-   Push ID is no greater than any previously sent value.
 
    Even when a GOAWAY indicates that a given request or push will not be
    processed or accepted upon receipt, the underlying transport
@@ -1391,17 +1386,6 @@ Internet-Draft                   HTTP/3                      August 2020
    assume that any request that was sent, whether in whole or in part,
    might have been processed.
 
-
-
-
-
-
-
-Bishop                  Expires 28 February 2021               [Page 25]
-
-Internet-Draft                   HTTP/3                      August 2020
-
-
 6.  Stream Mapping and Usage
 
    A QUIC stream provides reliable in-order delivery of bytes, but makes
@@ -1410,6 +1394,14 @@ Internet-Draft                   HTTP/3                      August 2020
    this framing is invisible to the HTTP framing layer.  The transport
    layer buffers and orders received QUIC STREAM frames, exposing the
    data contained within as a reliable byte stream to the application.
+
+
+
+Bishop                  Expires 28 February 2021               [Page 25]
+
+Internet-Draft                   HTTP/3                      August 2020
+
+
    Although QUIC permits out-of-order delivery within a stream, HTTP/3
    does not make use of this feature.
 
@@ -1449,6 +1441,14 @@ Internet-Draft                   HTTP/3                      August 2020
    and structure of data that follows this integer is determined by the
    stream type.
 
+   Unidirectional Stream Header {
+     Stream Type (i),
+   }
+
+                   Figure 1: Unidirectional Stream Header
+
+
+
 
 
 
@@ -1457,12 +1457,6 @@ Bishop                  Expires 28 February 2021               [Page 26]
 
 Internet-Draft                   HTTP/3                      August 2020
 
-
-   Unidirectional Stream Header {
-     Stream Type (i),
-   }
-
-                   Figure 1: Unidirectional Stream Header
 
    Two stream types are defined in this document: control streams
    (Section 6.2.1) and push streams (Section 6.2.2).  [QPACK] defines
@@ -1506,6 +1500,12 @@ Internet-Draft                   HTTP/3                      August 2020
    semantics of existing protocol components, including QPACK or other
    extensions, MUST NOT be sent until the peer is known to support them.
 
+   A sender can close or reset a unidirectional stream unless otherwise
+   specified.  A receiver MUST tolerate unidirectional streams being
+   closed or reset prior to the reception of the unidirectional stream
+   header.
+
+
 
 
 
@@ -1513,11 +1513,6 @@ Bishop                  Expires 28 February 2021               [Page 27]
 
 Internet-Draft                   HTTP/3                      August 2020
 
-
-   A sender can close or reset a unidirectional stream unless otherwise
-   specified.  A receiver MUST tolerate unidirectional streams being
-   closed or reset prior to the reception of the unidirectional stream
-   header.
 
 6.2.1.  Control Streams
 
@@ -1560,7 +1555,12 @@ Internet-Draft                   HTTP/3                      August 2020
    stream, this MUST be treated as a connection error of type
    H3_STREAM_CREATION_ERROR.
 
+   Push Stream Header {
+     Stream Type (i) = 0x01,
+     Push ID (i),
+   }
 
+                        Figure 2: Push Stream Header
 
 
 
@@ -1569,13 +1569,6 @@ Bishop                  Expires 28 February 2021               [Page 28]
 
 Internet-Draft                   HTTP/3                      August 2020
 
-
-   Push Stream Header {
-     Stream Type (i) = 0x01,
-     Push ID (i),
-   }
-
-                        Figure 2: Push Stream Header
 
    Each Push ID MUST only be used once in a push stream header.  If a
    push stream header includes a Push ID that was used in another push
@@ -1605,6 +1598,13 @@ Internet-Draft                   HTTP/3                      August 2020
    their permitted stream types; see Table 1 for an overview.  A
    comparison between HTTP/2 and HTTP/3 frames is provided in
    Appendix A.2.
+
+
+
+
+
+
+
 
 
 
