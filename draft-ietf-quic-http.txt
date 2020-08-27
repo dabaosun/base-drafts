@@ -2137,7 +2137,7 @@ Internet-Draft                   HTTP/3                      August 2020
    server fulfills or cancels server pushes.
 
    MAX_PUSH_ID Frame {
-     Type (i) = 0x1,
+     Type (i) = 0xD,
      Length (i),
      Push ID (i),
    }
