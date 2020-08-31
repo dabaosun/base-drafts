@@ -8359,7 +8359,7 @@ Internet-Draft           QUIC Transport Protocol             August 2020
 
    The Destination Connection ID field in any packets that a server
    subsequently sends to this spoofed address can be used for request
-   forgery.
+   forgery.  A client might also be able to influence the ciphertext.
 
    A server that only sends probing packets (Section 9.1) to an address
    prior to address validation provides an attacker with only limited
