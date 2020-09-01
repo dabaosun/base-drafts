@@ -116,7 +116,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
        7.8.2.  Establishing Persistent Congestion  . . . . . . . . .  23
        7.8.3.  Example . . . . . . . . . . . . . . . . . . . . . . .  23
-     7.9.  Pacing  . . . . . . . . . . . . . . . . . . . . . . . . .  25
+     7.9.  Pacing  . . . . . . . . . . . . . . . . . . . . . . . . .  24
      7.10. Under-utilizing the Congestion Window . . . . . . . . . .  26
    8.  Security Considerations . . . . . . . . . . . . . . . . . . .  26
      8.1.  Congestion Signals  . . . . . . . . . . . . . . . . . . .  26
@@ -1331,10 +1331,10 @@ Internet-Draft             QUIC Loss Detection            September 2020
    While this example shows PTO expiration, they are not required for
    persistent congestion to be established.
 
+7.9.  Pacing
 
-
-
-
+   A sender SHOULD pace sending of all in-flight packets based on input
+   from the congestion controller.
 
 
 
@@ -1346,15 +1346,12 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 24]
 Internet-Draft             QUIC Loss Detection            September 2020
 
 
-7.9.  Pacing
-
-   This document does not specify a pacer, but it is RECOMMENDED that a
-   sender pace sending of all in-flight packets based on input from the
-   congestion controller.  Sending multiple packets into the network
-   without any delay between them creates a packet burst that might
-   cause short-term congestion and losses.  Implementations MUST either
-   use pacing or another method to limit such bursts to the initial
-   congestion window; see Section 7.2.
+   Sending multiple packets into the network without any delay between
+   them creates a packet burst that might cause short-term congestion
+   and losses.  Senders MUST either use pacing or limit such bursts.
+   Senders SHOULD limit bursts to the initial congestion window; see
+   Section 7.2.  A sender with knowledge that the network path to the
+   receiver can absorb larger bursts MAY use a higher limit.
 
    An implementation should take care to architect its congestion
    controller to work well with a pacer.  For instance, a pacer might
@@ -1393,6 +1390,9 @@ Internet-Draft             QUIC Loss Detection            September 2020
    algorithm, where the capacity of the "bucket" is limited to the
    maximum burst size and the rate the "bucket" fills is determined by
    the above function.
+
+
+
 
 
 
