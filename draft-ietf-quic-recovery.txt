@@ -128,9 +128,9 @@ Internet-Draft             QUIC Loss Detection            September 2020
      10.2.  Informative References . . . . . . . . . . . . . . . . .  28
    Appendix A.  Loss Recovery Pseudocode . . . . . . . . . . . . . .  29
      A.1.  Tracking Sent Packets . . . . . . . . . . . . . . . . . .  29
-       A.1.1.  Sent Packet Fields  . . . . . . . . . . . . . . . . .  29
+       A.1.1.  Sent Packet Fields  . . . . . . . . . . . . . . . . .  30
      A.2.  Constants of Interest . . . . . . . . . . . . . . . . . .  30
-     A.3.  Variables of interest . . . . . . . . . . . . . . . . . .  30
+     A.3.  Variables of interest . . . . . . . . . . . . . . . . . .  31
      A.4.  Initialization  . . . . . . . . . . . . . . . . . . . . .  31
      A.5.  On Sending a Packet . . . . . . . . . . . . . . . . . . .  32
      A.6.  On Receiving a Datagram . . . . . . . . . . . . . . . . .  32
@@ -1107,13 +1107,13 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 7.3.  Slow Start
 
-   While in slow start, QUIC increases the congestion window by the
-   number of bytes acknowledged when each acknowledgment is processed,
-   resulting in exponential growth of the congestion window.
+   While in slow start, a NewReno sender increases the congestion window
+   by the number of bytes acknowledged when each acknowledgment is
+   processed, resulting in exponential growth of the congestion window.
 
-   QUIC exits slow start upon loss or upon increase in the ECN-CE
-   counter.  When slow start is exited, the congestion window halves and
-   the slow start threshold is set to the new congestion window.  QUIC
+   A sender MUST exit slow start and enter recovery when a loss is
+   detected or when the ECN-CE counter reported by the peer increases.
+
 
 
 
@@ -1122,41 +1122,45 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 20]
 Internet-Draft             QUIC Loss Detection            September 2020
 
 
-   re-enters slow start any time the congestion window is less than the
-   slow start threshold, which only occurs after persistent congestion
-   is declared.
+   A sender re-enters slow start any time the congestion window is less
+   than the slow start threshold, which only occurs after persistent
+   congestion is declared.
 
 7.4.  Congestion Avoidance
 
-   Slow start exits to congestion avoidance.  Congestion avoidance uses
-   an Additive Increase Multiplicative Decrease (AIMD) approach that
-   increases the congestion window by one maximum packet size per
-   congestion window acknowledged.  When a loss or ECN-CE marking is
-   detected, NewReno halves the congestion window, sets the slow start
-   threshold to the new congestion window, and then enters the recovery
-   period.
+   A NewReno sender in congestion avoidance uses an Additive Increase
+   Multiplicative Decrease (AIMD) approach that MUST increase the
+   congestion window by no more than one maximum datagram size per
+   congestion window acknowledged.
+
+   A sender MUST exit congestion avoidance and enter recovery when a
+   loss is detected or when the ECN-CE counter reported by the peer
+   increases.
 
 7.5.  Recovery Period
 
-   A recovery period is entered when loss or ECN-CE marking of a packet
-   is detected in congestion avoidance after the congestion window and
-   slow start threshold have been decreased.  A recovery period ends
-   when a packet sent during the recovery period is acknowledged.  This
-   is slightly different from TCP's definition of recovery, which ends
-   when the lost packet that started recovery is acknowledged.
+   A NewReno sender enters the recovery period when it detects loss or
+   an ECN-CE mark is received.  A recovery period ends when a packet
+   sent during the recovery period is acknowledged.
+
+   On entering a recovery period, a sender MUST set the slow start
+   threshold to half the value of the congestion window at the moment
+   that loss is detected.  The congestion window MUST be set to the
+   reduced value of the slow start threshold before exiting the recovery
+   period.
+
+   Implementations MAY set the congestion window immediately on entering
+   a recovery period or use other mechanisms, such as Proportional Rate
+   Reduction ([PRR]), to reduce it more gradually.  If the congestion
+   window is reduced immediately, a single packet can be sent prior to
+   reduction.  This speeds up loss recovery if the data in the lost
+   packet is retransmitted and is similar to TCP as described in
+   Section 5 of [RFC6675].
 
    The recovery period aims to limit congestion window reduction to once
    per round trip.  Therefore during recovery, the congestion window
    remains unchanged irrespective of new losses or increases in the ECN-
    CE counter.
-
-   When entering recovery, a single packet MAY be sent even if bytes in
-   flight now exceeds the recently reduced congestion window.  This
-   speeds up loss recovery if the data in the lost packet is
-   retransmitted and is similar to TCP as described in Section 5 of
-   [RFC6675].  If further packets are lost while the sender is in
-   recovery, sending any packets in response MUST obey the congestion
-   window limit.
 
 7.6.  Ignoring Loss of Undecryptable Packets
 
@@ -1166,10 +1170,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    processed until the Initial packets arrive and 1-RTT packets cannot
    be processed until the handshake completes.  Endpoints MAY ignore the
    loss of Handshake, 0-RTT, and 1-RTT packets that might have arrived
-   before the peer had packet protection keys to process those packets.
-   Endpoints MUST NOT ignore the loss of packets that were sent after
-   the earliest acknowledged packet in a given packet number space.
-
 
 
 
@@ -1177,6 +1177,10 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 21]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   before the peer had packet protection keys to process those packets.
+   Endpoints MUST NOT ignore the loss of packets that were sent after
+   the earliest acknowledged packet in a given packet number space.
 
 7.7.  Probe Timeout
 
@@ -1221,10 +1225,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    long period of time, even when no acknowledgments are being received.
    The use of a duration enables a sender to establish persistent
    congestion without depending on PTO expiration.
-
-
-
-
 
 
 
@@ -1468,11 +1468,11 @@ Internet-Draft             QUIC Loss Detection            September 2020
    connection flow control limits and so no advantage is gained by doing
    so.
 
-   Endpoints choose the congestion controller that they use.  Though
-   congestion controllers generally treat reports of ECN-CE markings as
-   equivalent to loss ([RFC8311]), the exact response for each
-   controller could be different.  Failure to correctly respond to
-   information about ECN markings is therefore difficult to detect.
+   Endpoints choose the congestion controller that they use.  Congestion
+   controllers respond to reports of ECN-CE by reducing their rate, but
+   the response may vary.  Markings can be treated as equivalent to loss
+   ([RFC3168]), but other responses can be specified, such as
+   ([RFC8511]) or ([RFC8311]).
 
 9.  IANA Considerations
 
@@ -1520,6 +1520,10 @@ Internet-Draft             QUIC Loss Detection            September 2020
               Refining TCP Congestion Control", ACM SIGCOMM , August
               1996.
 
+   [PRR]      Mathis, M., Dukkipati, N., and Y. Cheng, "Proportional
+              Rate Reduction for TCP", RFC 6937, DOI 10.17487/RFC6937,
+              May 2013, <https://www.rfc-editor.org/info/rfc6937>.
+
    [RACK]     Cheng, Y., Cardwell, N., Dukkipati, N., and P. Jha, "The
               RACK-TLP loss detection algorithm for TCP", Work in
               Progress, Internet-Draft, draft-ietf-tcpm-rack-10, 22
@@ -1557,11 +1561,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
               RFC 6582, DOI 10.17487/RFC6582, April 2012,
               <https://www.rfc-editor.org/info/rfc6582>.
 
-   [RFC6675]  Blanton, E., Allman, M., Wang, L., Jarvinen, I., Kojo, M.,
-              and Y. Nishida, "A Conservative Loss Recovery Algorithm
-              Based on Selective Acknowledgment (SACK) for TCP",
-              RFC 6675, DOI 10.17487/RFC6675, August 2012,
-              <https://www.rfc-editor.org/info/rfc6675>.
+
 
 
 
@@ -1569,6 +1569,12 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 28]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   [RFC6675]  Blanton, E., Allman, M., Wang, L., Jarvinen, I., Kojo, M.,
+              and Y. Nishida, "A Conservative Loss Recovery Algorithm
+              Based on Selective Acknowledgment (SACK) for TCP",
+              RFC 6675, DOI 10.17487/RFC6675, August 2012,
+              <https://www.rfc-editor.org/info/rfc6675>.
 
    [RFC6928]  Chu, J., Dukkipati, N., Cheng, Y., and M. Mathis,
               "Increasing TCP's Initial Window", RFC 6928,
@@ -1590,6 +1596,11 @@ Internet-Draft             QUIC Loss Detection            September 2020
               RFC 8312, DOI 10.17487/RFC8312, February 2018,
               <https://www.rfc-editor.org/info/rfc8312>.
 
+   [RFC8511]  Khademi, N., Welzl, M., Armitage, G., and G. Fairhurst,
+              "TCP Alternative Backoff with ECN (ABE)", RFC 8511,
+              DOI 10.17487/RFC8511, December 2018,
+              <https://www.rfc-editor.org/info/rfc8511>.
+
 Appendix A.  Loss Recovery Pseudocode
 
    We now describe an example implementation of the loss detection
@@ -1608,6 +1619,13 @@ A.1.  Tracking Sent Packets
    such as 1 RTT.  This allows for detection of spurious
    retransmissions.
 
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 29]
+
+Internet-Draft             QUIC Loss Detection            September 2020
+
+
    Sent packets are tracked for each packet number space, and ACK
    processing only applies to a single space.
 
@@ -1616,16 +1634,6 @@ A.1.1.  Sent Packet Fields
    packet_number:  The packet number of the sent packet.
 
    ack_eliciting:  A boolean that indicates whether a packet is ack-
-
-
-
-
-
-Iyengar & Swett           Expires 5 March 2021                 [Page 29]
-
-Internet-Draft             QUIC Loss Detection            September 2020
-
-
       eliciting.  If true, it is expected that an acknowledgement will
       be received, though the peer could delay sending the ACK frame
       containing it by up to the max_ack_delay.
@@ -1666,14 +1674,6 @@ A.2.  Constants of Interest
      ApplicationData,
    }
 
-A.3.  Variables of interest
-
-   Variables required to implement the congestion control mechanisms are
-   described in this section.
-
-   latest_rtt:  The most recent RTT measurement made when receiving an
-      ack for a previously unacked packet.
-
 
 
 
@@ -1681,6 +1681,14 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 30]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+A.3.  Variables of interest
+
+   Variables required to implement the congestion control mechanisms are
+   described in this section.
+
+   latest_rtt:  The most recent RTT measurement made when receiving an
+      ack for a previously unacked packet.
 
    smoothed_rtt:  The smoothed RTT of the connection, computed as
       described in Section 5.3.
@@ -1720,14 +1728,6 @@ A.4.  Initialization
 
    At the beginning of the connection, initialize the loss detection
    variables as follows:
-
-
-
-
-
-
-
-
 
 
 
