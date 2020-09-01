@@ -1088,6 +1088,12 @@ Internet-Draft             QUIC Loss Detection            September 2020
    increasing the byte limit to account for the smaller 8 byte overhead
    of UDP compared to the 20 byte overhead for TCP.
 
+   If the maximum datagram size changes during the connection, the
+   initial congestion window SHOULD be recalculated with the new size.
+   If the maximum datagram size is decreased in order to complete the
+   handshake, the congestion window SHOULD be set to the new initial
+   congestion window.
+
    Prior to validating the client's address, the server can be further
    limited by the anti-amplification limit as specified in Section 8.1
    of [QUIC-TRANSPORT].  Though the anti-amplification limit can prevent
@@ -1108,12 +1114,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    QUIC exits slow start upon loss or upon increase in the ECN-CE
    counter.  When slow start is exited, the congestion window halves and
    the slow start threshold is set to the new congestion window.  QUIC
-   re-enters slow start any time the congestion window is less than the
-   slow start threshold, which only occurs after persistent congestion
-   is declared.
-
-
-
 
 
 
@@ -1121,6 +1121,10 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 20]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   re-enters slow start any time the congestion window is less than the
+   slow start threshold, which only occurs after persistent congestion
+   is declared.
 
 7.4.  Congestion Avoidance
 
@@ -1165,10 +1169,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    before the peer had packet protection keys to process those packets.
    Endpoints MUST NOT ignore the loss of packets that were sent after
    the earliest acknowledged packet in a given packet number space.
-
-
-
-
 
 
 
