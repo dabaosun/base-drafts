@@ -105,7 +105,7 @@ Table of Contents
      7.6.  Ignoring Loss of Undecryptable Packets  . . . . . . . . .  21
      7.7.  Probe Timeout . . . . . . . . . . . . . . . . . . . . . .  22
      7.8.  Persistent Congestion . . . . . . . . . . . . . . . . . .  22
-     7.9.  Pacing  . . . . . . . . . . . . . . . . . . . . . . . . .  24
+       7.8.1.  Duration  . . . . . . . . . . . . . . . . . . . . . .  22
 
 
 
@@ -114,54 +114,54 @@ Iyengar & Swett           Expires 5 March 2021                  [Page 2]
 Internet-Draft             QUIC Loss Detection            September 2020
 
 
-     7.10. Under-utilizing the Congestion Window . . . . . . . . . .  25
-   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  25
-     8.1.  Congestion Signals  . . . . . . . . . . . . . . . . . . .  25
-     8.2.  Traffic Analysis  . . . . . . . . . . . . . . . . . . . .  25
-     8.3.  Misreporting ECN Markings . . . . . . . . . . . . . . . .  25
-   9.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  26
-   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  26
-     10.1.  Normative References . . . . . . . . . . . . . . . . . .  26
-     10.2.  Informative References . . . . . . . . . . . . . . . . .  27
-   Appendix A.  Loss Recovery Pseudocode . . . . . . . . . . . . . .  28
-     A.1.  Tracking Sent Packets . . . . . . . . . . . . . . . . . .  28
-       A.1.1.  Sent Packet Fields  . . . . . . . . . . . . . . . . .  28
-     A.2.  Constants of Interest . . . . . . . . . . . . . . . . . .  29
-     A.3.  Variables of interest . . . . . . . . . . . . . . . . . .  29
-     A.4.  Initialization  . . . . . . . . . . . . . . . . . . . . .  30
-     A.5.  On Sending a Packet . . . . . . . . . . . . . . . . . . .  31
-     A.6.  On Receiving a Datagram . . . . . . . . . . . . . . . . .  31
-     A.7.  On Receiving an Acknowledgment  . . . . . . . . . . . . .  32
-     A.8.  Setting the Loss Detection Timer  . . . . . . . . . . . .  33
-     A.9.  On Timeout  . . . . . . . . . . . . . . . . . . . . . . .  35
-     A.10. Detecting Lost Packets  . . . . . . . . . . . . . . . . .  36
-   Appendix B.  Congestion Control Pseudocode  . . . . . . . . . . .  37
-     B.1.  Constants of interest . . . . . . . . . . . . . . . . . .  37
-     B.2.  Variables of interest . . . . . . . . . . . . . . . . . .  38
-     B.3.  Initialization  . . . . . . . . . . . . . . . . . . . . .  38
-     B.4.  On Packet Sent  . . . . . . . . . . . . . . . . . . . . .  39
-     B.5.  On Packet Acknowledgement . . . . . . . . . . . . . . . .  39
-     B.6.  On New Congestion Event . . . . . . . . . . . . . . . . .  40
-     B.7.  Process ECN Information . . . . . . . . . . . . . . . . .  40
-     B.8.  On Packets Lost . . . . . . . . . . . . . . . . . . . . .  40
-     B.9.  Upon dropping Initial or Handshake keys . . . . . . . . .  41
-   Appendix C.  Change Log . . . . . . . . . . . . . . . . . . . . .  41
-     C.1.  Since draft-ietf-quic-recovery-28 . . . . . . . . . . . .  42
-     C.2.  Since draft-ietf-quic-recovery-27 . . . . . . . . . . . .  42
-     C.3.  Since draft-ietf-quic-recovery-26 . . . . . . . . . . . .  42
-     C.4.  Since draft-ietf-quic-recovery-25 . . . . . . . . . . . .  42
-     C.5.  Since draft-ietf-quic-recovery-24 . . . . . . . . . . . .  42
-     C.6.  Since draft-ietf-quic-recovery-23 . . . . . . . . . . . .  42
-     C.7.  Since draft-ietf-quic-recovery-22 . . . . . . . . . . . .  43
-     C.8.  Since draft-ietf-quic-recovery-21 . . . . . . . . . . . .  43
-     C.9.  Since draft-ietf-quic-recovery-20 . . . . . . . . . . . .  43
-     C.10. Since draft-ietf-quic-recovery-19 . . . . . . . . . . . .  43
-     C.11. Since draft-ietf-quic-recovery-18 . . . . . . . . . . . .  44
-     C.12. Since draft-ietf-quic-recovery-17 . . . . . . . . . . . .  44
-     C.13. Since draft-ietf-quic-recovery-16 . . . . . . . . . . . .  45
-     C.14. Since draft-ietf-quic-recovery-14 . . . . . . . . . . . .  45
-     C.15. Since draft-ietf-quic-recovery-13 . . . . . . . . . . . .  45
-     C.16. Since draft-ietf-quic-recovery-12 . . . . . . . . . . . .  46
+       7.8.2.  Establishing Persistent Congestion  . . . . . . . . .  23
+       7.8.3.  Example . . . . . . . . . . . . . . . . . . . . . . .  23
+     7.9.  Pacing  . . . . . . . . . . . . . . . . . . . . . . . . .  25
+     7.10. Under-utilizing the Congestion Window . . . . . . . . . .  26
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  26
+     8.1.  Congestion Signals  . . . . . . . . . . . . . . . . . . .  26
+     8.2.  Traffic Analysis  . . . . . . . . . . . . . . . . . . . .  26
+     8.3.  Misreporting ECN Markings . . . . . . . . . . . . . . . .  26
+   9.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  27
+   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  27
+     10.1.  Normative References . . . . . . . . . . . . . . . . . .  27
+     10.2.  Informative References . . . . . . . . . . . . . . . . .  28
+   Appendix A.  Loss Recovery Pseudocode . . . . . . . . . . . . . .  29
+     A.1.  Tracking Sent Packets . . . . . . . . . . . . . . . . . .  29
+       A.1.1.  Sent Packet Fields  . . . . . . . . . . . . . . . . .  29
+     A.2.  Constants of Interest . . . . . . . . . . . . . . . . . .  30
+     A.3.  Variables of interest . . . . . . . . . . . . . . . . . .  30
+     A.4.  Initialization  . . . . . . . . . . . . . . . . . . . . .  31
+     A.5.  On Sending a Packet . . . . . . . . . . . . . . . . . . .  32
+     A.6.  On Receiving a Datagram . . . . . . . . . . . . . . . . .  32
+     A.7.  On Receiving an Acknowledgment  . . . . . . . . . . . . .  33
+     A.8.  Setting the Loss Detection Timer  . . . . . . . . . . . .  34
+     A.9.  On Timeout  . . . . . . . . . . . . . . . . . . . . . . .  36
+     A.10. Detecting Lost Packets  . . . . . . . . . . . . . . . . .  37
+   Appendix B.  Congestion Control Pseudocode  . . . . . . . . . . .  38
+     B.1.  Constants of interest . . . . . . . . . . . . . . . . . .  38
+     B.2.  Variables of interest . . . . . . . . . . . . . . . . . .  39
+     B.3.  Initialization  . . . . . . . . . . . . . . . . . . . . .  39
+     B.4.  On Packet Sent  . . . . . . . . . . . . . . . . . . . . .  40
+     B.5.  On Packet Acknowledgement . . . . . . . . . . . . . . . .  40
+     B.6.  On New Congestion Event . . . . . . . . . . . . . . . . .  41
+     B.7.  Process ECN Information . . . . . . . . . . . . . . . . .  41
+     B.8.  On Packets Lost . . . . . . . . . . . . . . . . . . . . .  41
+     B.9.  Upon dropping Initial or Handshake keys . . . . . . . . .  42
+   Appendix C.  Change Log . . . . . . . . . . . . . . . . . . . . .  42
+     C.1.  Since draft-ietf-quic-recovery-28 . . . . . . . . . . . .  43
+     C.2.  Since draft-ietf-quic-recovery-27 . . . . . . . . . . . .  43
+     C.3.  Since draft-ietf-quic-recovery-26 . . . . . . . . . . . .  43
+     C.4.  Since draft-ietf-quic-recovery-25 . . . . . . . . . . . .  43
+     C.5.  Since draft-ietf-quic-recovery-24 . . . . . . . . . . . .  43
+     C.6.  Since draft-ietf-quic-recovery-23 . . . . . . . . . . . .  43
+     C.7.  Since draft-ietf-quic-recovery-22 . . . . . . . . . . . .  44
+     C.8.  Since draft-ietf-quic-recovery-21 . . . . . . . . . . . .  44
+     C.9.  Since draft-ietf-quic-recovery-20 . . . . . . . . . . . .  44
+     C.10. Since draft-ietf-quic-recovery-19 . . . . . . . . . . . .  44
+     C.11. Since draft-ietf-quic-recovery-18 . . . . . . . . . . . .  45
+     C.12. Since draft-ietf-quic-recovery-17 . . . . . . . . . . . .  45
+     C.13. Since draft-ietf-quic-recovery-16 . . . . . . . . . . . .  46
 
 
 
@@ -170,22 +170,25 @@ Iyengar & Swett           Expires 5 March 2021                  [Page 3]
 Internet-Draft             QUIC Loss Detection            September 2020
 
 
-     C.17. Since draft-ietf-quic-recovery-11 . . . . . . . . . . . .  46
-     C.18. Since draft-ietf-quic-recovery-10 . . . . . . . . . . . .  46
-     C.19. Since draft-ietf-quic-recovery-09 . . . . . . . . . . . .  46
-     C.20. Since draft-ietf-quic-recovery-08 . . . . . . . . . . . .  46
-     C.21. Since draft-ietf-quic-recovery-07 . . . . . . . . . . . .  46
-     C.22. Since draft-ietf-quic-recovery-06 . . . . . . . . . . . .  47
-     C.23. Since draft-ietf-quic-recovery-05 . . . . . . . . . . . .  47
-     C.24. Since draft-ietf-quic-recovery-04 . . . . . . . . . . . .  47
-     C.25. Since draft-ietf-quic-recovery-03 . . . . . . . . . . . .  47
-     C.26. Since draft-ietf-quic-recovery-02 . . . . . . . . . . . .  47
-     C.27. Since draft-ietf-quic-recovery-01 . . . . . . . . . . . .  47
-     C.28. Since draft-ietf-quic-recovery-00 . . . . . . . . . . . .  47
-     C.29. Since draft-iyengar-quic-loss-recovery-01 . . . . . . . .  47
-   Appendix D.  Contributors . . . . . . . . . . . . . . . . . . . .  48
-   Acknowledgments . . . . . . . . . . . . . . . . . . . . . . . . .  48
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  48
+     C.14. Since draft-ietf-quic-recovery-14 . . . . . . . . . . . .  46
+     C.15. Since draft-ietf-quic-recovery-13 . . . . . . . . . . . .  46
+     C.16. Since draft-ietf-quic-recovery-12 . . . . . . . . . . . .  47
+     C.17. Since draft-ietf-quic-recovery-11 . . . . . . . . . . . .  47
+     C.18. Since draft-ietf-quic-recovery-10 . . . . . . . . . . . .  47
+     C.19. Since draft-ietf-quic-recovery-09 . . . . . . . . . . . .  47
+     C.20. Since draft-ietf-quic-recovery-08 . . . . . . . . . . . .  47
+     C.21. Since draft-ietf-quic-recovery-07 . . . . . . . . . . . .  47
+     C.22. Since draft-ietf-quic-recovery-06 . . . . . . . . . . . .  48
+     C.23. Since draft-ietf-quic-recovery-05 . . . . . . . . . . . .  48
+     C.24. Since draft-ietf-quic-recovery-04 . . . . . . . . . . . .  48
+     C.25. Since draft-ietf-quic-recovery-03 . . . . . . . . . . . .  48
+     C.26. Since draft-ietf-quic-recovery-02 . . . . . . . . . . . .  48
+     C.27. Since draft-ietf-quic-recovery-01 . . . . . . . . . . . .  48
+     C.28. Since draft-ietf-quic-recovery-00 . . . . . . . . . . . .  48
+     C.29. Since draft-iyengar-quic-loss-recovery-01 . . . . . . . .  48
+   Appendix D.  Contributors . . . . . . . . . . . . . . . . . . . .  49
+   Acknowledgments . . . . . . . . . . . . . . . . . . . . . . . . .  49
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  49
 
 1.  Introduction
 
@@ -214,9 +217,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
       delay and are called ack-eliciting packets.
 
    In-flight:  Packets are considered in-flight when they are ack-
-      eliciting or contain a PADDING frame, and they have been sent but
-      are not acknowledged, declared lost, or discarded along with old
-      keys.
 
 
 
@@ -225,6 +225,10 @@ Iyengar & Swett           Expires 5 March 2021                  [Page 4]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+      eliciting or contain a PADDING frame, and they have been sent but
+      are not acknowledged, declared lost, or discarded along with old
+      keys.
 
 3.  Design of the QUIC Transmission Machinery
 
@@ -269,10 +273,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    However, protocol differences between QUIC and TCP contribute to
    algorithmic differences.  These protocol differences are briefly
    described below.
-
-
-
-
 
 
 
@@ -1190,37 +1190,87 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 7.8.  Persistent Congestion
 
-   When an ACK frame is received that establishes loss of all in-flight
-   packets sent over a long enough period of time, the network is
-   considered to be experiencing persistent congestion.  Commonly, this
-   can be established by consecutive PTOs, but since the PTO timer is
-   reset when a new ack-eliciting packet is sent, an explicit duration
-   must be used to account for those cases where PTOs do not occur or
-   are substantially delayed.  The rationale for this threshold is to
-   enable a sender to use initial PTOs for aggressive probing, as TCP
-   does with Tail Loss Probe (TLP; see [RACK]), before establishing
-   persistent congestion, as TCP does with a Retransmission Timeout
-   (RTO; see [RFC5681]).  The RECOMMENDED value for
-   kPersistentCongestionThreshold is 3, which is approximately
-   equivalent to two TLPs before an RTO in TCP.
+   When a sender establishes loss of all in-flight packets sent over a
+   long enough duration, the network is considered to be experiencing
+   persistent congestion.
 
-   The persistent congestion period SHOULD NOT start until there is at
-   least one RTT sample.  Prior to an RTT sample, the duration cannot be
-   correctly calculated.  Waiting for one RTT sample also avoids
-   spuriously declaring persistent congestion when the initial RTT is
-   larger than the actual RTT.
+7.8.1.  Duration
 
-   This duration is computed as follows:
+   The persistent congestion duration is computed as follows:
 
    (smoothed_rtt + max(4*rttvar, kGranularity) + max_ack_delay) *
        kPersistentCongestionThreshold
 
-   Unlike the PTO computation in Section 6.2, persistent congestion
-   includes the max_ack_delay irrespective of the packet number spaces
-   in which losses are established.
+   Unlike the PTO computation in Section 6.2, this duration includes the
+   max_ack_delay irrespective of the packet number spaces in which
+   losses are established.
 
-   The following example illustrates how persistent congestion can be
-   established.  Assume:
+   This duration allows a sender to send as many packets before
+   establishing persistent congestion, including some in response to PTO
+   expiration, as TCP does with Tail Loss Probes ([RACK]) and a
+   Retransmission Timeout ([RFC5681]).
+
+   The RECOMMENDED value for kPersistentCongestionThreshold is 3, which
+   is approximately equivalent to two TLPs before an RTO in TCP.
+
+   This design does not use consecutive PTO events to establish
+   persistent congestion, since application patterns impact PTO
+   expirations.  For example, a sender that sends small amounts of data
+   with silence periods between them restarts the PTO timer every time
+   it sends, potentially preventing the PTO timer from expiring for a
+   long period of time, even when no acknowledgments are being received.
+   The use of a duration enables a sender to establish persistent
+   congestion without depending on PTO expiration.
+
+
+
+
+
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 22]
+
+Internet-Draft             QUIC Loss Detection            September 2020
+
+
+7.8.2.  Establishing Persistent Congestion
+
+   A sender establishes persistent congestion on receiving an
+   acknowledgement if at least two ack-eliciting packets are declared
+   lost, and:
+
+   *  all packets, across all packet number spaces, sent between these
+      two send times are declared lost;
+
+   *  the duration between the send times of these two packets exceeds
+      the persistent congestion duration (Section 7.8.1); and
+
+   *  a prior RTT sample existed when both packets were sent.
+
+   The persistent congestion period SHOULD NOT start until there is at
+   least one RTT sample.  Before the first RTT sample, a sender arms its
+   PTO timer based on the initial RTT (Section 6.2.2), which could be
+   substantially larger than the actual RTT.  Requiring a prior RTT
+   sample prevents a sender from establishing persistent congestion with
+   potentially too few probes.
+
+   Since network congestion is not affected by packet number spaces,
+   persistent congestion SHOULD consider packets sent across packet
+   number spaces.  A sender that does not have state for all packet
+   number spaces or an implementation that cannot compare send times
+   across packet number spaces MAY use state for just the packet number
+   space that was acknowledged.
+
+   When persistent congestion is declared, the sender's congestion
+   window MUST be reduced to the minimum congestion window
+   (kMinimumWindow), similar to a TCP sender's response on an RTO
+   ([RFC5681]).
+
+7.8.3.  Example
+
+   The following example illustrates how a sender might establish
+   persistent congestion.  Assume:
 
    smoothed_rtt + max(4*rttvar, kGranularity) + max_ack_delay = 2
    kPersistentCongestionThreshold = 3
@@ -1229,7 +1279,13 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 22]
+
+
+
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 23]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1266,26 +1322,26 @@ Internet-Draft             QUIC Loss Detection            September 2020
    packet 9 is received at t = 12.2.
 
    The congestion period is calculated as the time between the oldest
-   and newest lost packets: 8 - 1 = 7.  The duration for establishing
-   persistent congestion is: 2 * 3 = 6.  Because the threshold was
-   reached and because none of the packets between the oldest and the
-   newest lost packets were acknowledged, the network is considered to
-   have experienced persistent congestion.
+   and newest lost packets: 8 - 1 = 7.  The persistent congestion
+   duration is: 2 * 3 = 6.  Because the threshold was reached and
+   because none of the packets between the oldest and the newest lost
+   packets were acknowledged, the network is considered to have
+   experienced persistent congestion.
 
-   While this example shows the occurrence of PTOs, they are not
-   required for persistent congestion to be established.
-
-   When persistent congestion is established, the sender's congestion
-   window MUST be reduced to the minimum congestion window
-   (kMinimumWindow).  This response of collapsing the congestion window
-   on persistent congestion is functionally similar to a sender's
-   response on a Retransmission Timeout (RTO) in TCP ([RFC5681]) after
-   Tail Loss Probes (TLP; see [RACK]).
+   While this example shows PTO expiration, they are not required for
+   persistent congestion to be established.
 
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 23]
+
+
+
+
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 24]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1341,7 +1397,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 24]
+Iyengar & Swett           Expires 5 March 2021                 [Page 25]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1397,7 +1453,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 25]
+Iyengar & Swett           Expires 5 March 2021                 [Page 26]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1453,7 +1509,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 26]
+Iyengar & Swett           Expires 5 March 2021                 [Page 27]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1509,7 +1565,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 27]
+Iyengar & Swett           Expires 5 March 2021                 [Page 28]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1565,7 +1621,7 @@ A.1.1.  Sent Packet Fields
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 28]
+Iyengar & Swett           Expires 5 March 2021                 [Page 29]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1621,7 +1677,7 @@ A.3.  Variables of interest
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 29]
+Iyengar & Swett           Expires 5 March 2021                 [Page 30]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1677,7 +1733,7 @@ A.4.  Initialization
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 30]
+Iyengar & Swett           Expires 5 March 2021                 [Page 31]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1733,7 +1789,7 @@ A.6.  On Receiving a Datagram
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 31]
+Iyengar & Swett           Expires 5 March 2021                 [Page 32]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1789,7 +1845,7 @@ A.7.  On Receiving an Acknowledgment
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 32]
+Iyengar & Swett           Expires 5 March 2021                 [Page 33]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1845,7 +1901,7 @@ A.8.  Setting the Loss Detection Timer
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 33]
+Iyengar & Swett           Expires 5 March 2021                 [Page 34]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1901,7 +1957,7 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 34]
+Iyengar & Swett           Expires 5 March 2021                 [Page 35]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -1957,7 +2013,7 @@ A.9.  On Timeout
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 35]
+Iyengar & Swett           Expires 5 March 2021                 [Page 36]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2013,7 +2069,7 @@ A.10.  Detecting Lost Packets
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 36]
+Iyengar & Swett           Expires 5 March 2021                 [Page 37]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2069,7 +2125,7 @@ B.1.  Constants of interest
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 37]
+Iyengar & Swett           Expires 5 March 2021                 [Page 38]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2125,7 +2181,7 @@ B.3.  Initialization
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 38]
+Iyengar & Swett           Expires 5 March 2021                 [Page 39]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2181,7 +2237,7 @@ B.5.  On Packet Acknowledgement
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 39]
+Iyengar & Swett           Expires 5 March 2021                 [Page 40]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2237,7 +2293,7 @@ B.8.  On Packets Lost
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 40]
+Iyengar & Swett           Expires 5 March 2021                 [Page 41]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2293,7 +2349,7 @@ Appendix C.  Change Log
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 41]
+Iyengar & Swett           Expires 5 March 2021                 [Page 42]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2349,7 +2405,7 @@ C.6.  Since draft-ietf-quic-recovery-23
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 42]
+Iyengar & Swett           Expires 5 March 2021                 [Page 43]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2405,7 +2461,7 @@ C.10.  Since draft-ietf-quic-recovery-19
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 43]
+Iyengar & Swett           Expires 5 March 2021                 [Page 44]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2461,7 +2517,7 @@ C.12.  Since draft-ietf-quic-recovery-17
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 44]
+Iyengar & Swett           Expires 5 March 2021                 [Page 45]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2517,7 +2573,7 @@ C.15.  Since draft-ietf-quic-recovery-13
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 45]
+Iyengar & Swett           Expires 5 March 2021                 [Page 46]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2573,7 +2629,7 @@ C.21.  Since draft-ietf-quic-recovery-07
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 46]
+Iyengar & Swett           Expires 5 March 2021                 [Page 47]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2629,7 +2685,7 @@ C.29.  Since draft-iyengar-quic-loss-recovery-01
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 47]
+Iyengar & Swett           Expires 5 March 2021                 [Page 48]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
@@ -2685,4 +2741,4 @@ Authors' Addresses
 
 
 
-Iyengar & Swett           Expires 5 March 2021                 [Page 48]
+Iyengar & Swett           Expires 5 March 2021                 [Page 49]
