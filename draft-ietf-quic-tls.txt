@@ -695,9 +695,12 @@ Internet-Draft          Using TLS to Secure QUIC          September 2020
 
    As keys at a given encryption level become available to TLS, TLS
    indicates to QUIC that reading or writing keys at that encryption
-   level are available.  These events are not asynchronous; they always
-   occur immediately after TLS is provided with new handshake bytes, or
-   after TLS produces handshake bytes.
+   level are available.  While generating these keys, an endpoint SHOULD
+   buffer received packets marked as protected by the keys being
+   generated, and process them once those keys become available.  If the
+   keys are generated asynchronously, an endpoint MAY continue
+   responding to the received packets that were processable while
+   waiting for TLS to provide these keys.
 
    TLS provides QUIC with three items as a new encryption level becomes
    available:
@@ -719,9 +722,6 @@ Internet-Draft          Using TLS to Secure QUIC          September 2020
    receiving handshake bytes that contain a ClientHello message, a TLS
    server might signal that 0-RTT keys are available.
 
-   Although TLS only uses one encryption level at a time, QUIC may use
-   more than one level.  For instance, after sending its Finished
-   message (using a CRYPTO frame at the Handshake encryption level) an
 
 
 
@@ -730,6 +730,9 @@ Thomson & Turner          Expires 5 March 2021                 [Page 13]
 Internet-Draft          Using TLS to Secure QUIC          September 2020
 
 
+   Although TLS only uses one encryption level at a time, QUIC may use
+   more than one level.  For instance, after sending its Finished
+   message (using a CRYPTO frame at the Handshake encryption level) an
    endpoint can send STREAM data (in 1-RTT encryption).  If the Finished
    message is lost, the endpoint uses the Handshake encryption level to
    retransmit the lost message.  Reordering or loss of packets can mean
@@ -757,9 +760,6 @@ Internet-Draft          Using TLS to Secure QUIC          September 2020
    and server.  Solid arrows indicate packets that carry handshake data;
    dashed arrows show where application data can be sent.  Each arrow is
    tagged with the encryption level used for that transmission.
-
-
-
 
 
 
