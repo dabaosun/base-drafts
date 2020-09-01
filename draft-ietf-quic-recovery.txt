@@ -84,12 +84,12 @@ Table of Contents
    5.  Estimating the Round-Trip Time  . . . . . . . . . . . . . . .   8
      5.1.  Generating RTT samples  . . . . . . . . . . . . . . . . .   8
      5.2.  Estimating min_rtt  . . . . . . . . . . . . . . . . . . .   9
-     5.3.  Estimating smoothed_rtt and rttvar  . . . . . . . . . . .   9
-   6.  Loss Detection  . . . . . . . . . . . . . . . . . . . . . . .  11
+     5.3.  Estimating smoothed_rtt and rttvar  . . . . . . . . . . .  10
+   6.  Loss Detection  . . . . . . . . . . . . . . . . . . . . . . .  12
      6.1.  Acknowledgement-Based Detection . . . . . . . . . . . . .  12
-       6.1.1.  Packet Threshold  . . . . . . . . . . . . . . . . . .  12
+       6.1.1.  Packet Threshold  . . . . . . . . . . . . . . . . . .  13
        6.1.2.  Time Threshold  . . . . . . . . . . . . . . . . . . .  13
-     6.2.  Probe Timeout . . . . . . . . . . . . . . . . . . . . . .  13
+     6.2.  Probe Timeout . . . . . . . . . . . . . . . . . . . . . .  14
        6.2.1.  Computing PTO . . . . . . . . . . . . . . . . . . . .  14
        6.2.2.  Handshakes and New Paths  . . . . . . . . . . . . . .  16
        6.2.3.  Speeding Up Handshake Completion  . . . . . . . . . .  17
@@ -470,11 +470,13 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
 5.2.  Estimating min_rtt
 
-   min_rtt is the minimum RTT observed for a given network path.
-   min_rtt is set to the latest_rtt on the first RTT sample, and to the
-   lesser of min_rtt and latest_rtt on subsequent samples.  In this
-   document, min_rtt is used by loss detection to reject implausibly
-   small rtt samples.
+   min_rtt is the sender's estimate of the minimum RTT observed for a
+   given network path.  In this document, min_rtt is used by loss
+   detection to reject implausibly small rtt samples.
+
+   min_rtt MUST be set to the latest_rtt on the first RTT sample.
+   min_rtt MUST be set to the lesser of min_rtt and latest_rtt
+   (Section 5.1) on all other samples.
 
    An endpoint uses only locally observed times in computing the min_rtt
    and does not adjust for acknowledgment delays reported by the peer.
@@ -485,18 +487,16 @@ Internet-Draft             QUIC Loss Detection            September 2020
 
    The RTT for a network path may change over time.  If a path's actual
    RTT decreases, the min_rtt will adapt immediately on the first low
-   sample.  If the path's actual RTT increases, the min_rtt will not
-   adapt to it, allowing future RTT samples that are smaller than the
-   new RTT to be included in smoothed_rtt.
+   sample.  If the path's actual RTT increases however, the min_rtt will
+   not adapt to it, allowing future RTT samples that are smaller than
+   the new RTT to be included in smoothed_rtt.
 
-5.3.  Estimating smoothed_rtt and rttvar
-
-   smoothed_rtt is an exponentially-weighted moving average of an
-   endpoint's RTT samples, and rttvar is the variation in the RTT
-   samples, estimated using a mean variation.
-
-
-
+   Endpoints SHOULD set the min_rtt to the newest RTT sample after
+   persistent congestion is established.  This is to allow a connection
+   to reset its estimate of min_rtt and smoothed_rtt (Section 5.3) after
+   a disruptive network event, and because it is possible that an
+   increase in path delay resulted in persistent congestion being
+   incorrectly declared.
 
 
 
@@ -505,6 +505,18 @@ Iyengar & Swett           Expires 5 March 2021                  [Page 9]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   Endpoints MAY re-establish the min_rtt at other times in the
+   connection, such as when traffic volume is low and an acknowledgement
+   is received with a low acknowledgement delay.  Implementations SHOULD
+   NOT refresh the min_rtt value too often, since the actual minimum RTT
+   of the path is not frequently observable.
+
+5.3.  Estimating smoothed_rtt and rttvar
+
+   smoothed_rtt is an exponentially-weighted moving average of an
+   endpoint's RTT samples, and rttvar is the variation in the RTT
+   samples, estimated using a mean variation.
 
    The calculation of smoothed_rtt uses RTT samples after adjusting them
    for acknowledgement delays.  These delays are computed using the ACK
@@ -542,6 +554,14 @@ Internet-Draft             QUIC Loss Detection            September 2020
       these acknowledgements are not delayed by the peer (Section 13.2.1
       of [QUIC-TRANSPORT]);
 
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 10]
+
+Internet-Draft             QUIC Loss Detection            September 2020
+
+
    *  SHOULD ignore the peer's max_ack_delay until the handshake is
       confirmed;
 
@@ -551,16 +571,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    *  MUST NOT subtract the acknowledgement delay from the RTT sample if
       the resulting value is smaller than the min_rtt.  This limits the
       underestimation of the smoothed_rtt due to a misreporting peer.
-
-
-
-
-
-
-Iyengar & Swett           Expires 5 March 2021                 [Page 10]
-
-Internet-Draft             QUIC Loss Detection            September 2020
-
 
    Additionally, an endpoint might postpone the processing of
    acknowledgements when the corresponding decryption keys are not
@@ -596,16 +606,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    rttvar_sample = abs(smoothed_rtt - adjusted_rtt)
    rttvar = 3/4 * rttvar + 1/4 * rttvar_sample
 
-6.  Loss Detection
-
-   QUIC senders use acknowledgements to detect lost packets, and a probe
-   time out (see Section 6.2) to ensure acknowledgements are received.
-   This section provides a description of these algorithms.
-
-   If a packet is lost, the QUIC transport needs to recover from that
-   loss, such as by retransmitting the data, sending an updated frame,
-   or discarding the frame.  For more information, see Section 13.3 of
-   [QUIC-TRANSPORT].
 
 
 
@@ -617,6 +617,17 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 11]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+6.  Loss Detection
+
+   QUIC senders use acknowledgements to detect lost packets, and a probe
+   time out (see Section 6.2) to ensure acknowledgements are received.
+   This section provides a description of these algorithms.
+
+   If a packet is lost, the QUIC transport needs to recover from that
+   loss, such as by retransmitting the data, sending an updated frame,
+   or discarding the frame.  For more information, see Section 13.3 of
+   [QUIC-TRANSPORT].
 
    Loss detection is separate per packet number space, unlike RTT
    measurement and congestion control, because RTT and congestion
@@ -653,6 +664,16 @@ Internet-Draft             QUIC Loss Detection            September 2020
    thresholds MAY choose to start with smaller initial reordering
    thresholds to minimize recovery latency.
 
+
+
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 12]
+
+Internet-Draft             QUIC Loss Detection            September 2020
+
+
 6.1.1.  Packet Threshold
 
    The RECOMMENDED initial value for the packet reordering threshold
@@ -666,14 +687,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    reordering could be more common with QUIC than TCP, because network
    elements that could observe and fix the order of reordered TCP
    packets cannot do that for QUIC.  Algorithms that increase the
-
-
-
-Iyengar & Swett           Expires 5 March 2021                 [Page 12]
-
-Internet-Draft             QUIC Loss Detection            September 2020
-
-
    reordering threshold after spuriously detecting losses, such as RACK
    [RACK], have proven to be useful in TCP and are expected to at least
    as useful in QUIC.
@@ -707,6 +720,16 @@ Internet-Draft             QUIC Loss Detection            September 2020
    round-trip time multiplier, is 9/8.  The RECOMMENDED value of the
    timer granularity (kGranularity) is 1ms.
 
+
+
+
+
+
+Iyengar & Swett           Expires 5 March 2021                 [Page 13]
+
+Internet-Draft             QUIC Loss Detection            September 2020
+
+
    Implementations MAY experiment with absolute thresholds, thresholds
    from previous connections, adaptive thresholds, or including RTT
    variation.  Smaller thresholds reduce reordering resilience and
@@ -720,15 +743,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    period of time or the server may not have validated the client's
    address.  A PTO enables a connection to recover from loss of tail
    packets or acknowledgements.
-
-
-
-
-
-Iyengar & Swett           Expires 5 March 2021                 [Page 13]
-
-Internet-Draft             QUIC Loss Detection            September 2020
-
 
    As with loss detection, the probe timeout is per packet number space.
    That is, a PTO value is computed per packet number space.
@@ -765,26 +779,16 @@ Internet-Draft             QUIC Loss Detection            September 2020
    The PTO period MUST be at least kGranularity, to avoid the timer
    expiring immediately.
 
-   When ack-eliciting packets in multiple packet number spaces are in
-   flight, the timer MUST be set to the earlier value of the Initial and
-   Handshake packet number spaces.
-
-
-
-
-
-
-
-
-
-
-
 
 
 Iyengar & Swett           Expires 5 March 2021                 [Page 14]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   When ack-eliciting packets in multiple packet number spaces are in
+   flight, the timer MUST be set to the earlier value of the Initial and
+   Handshake packet number spaces.
 
    An endpoint MUST NOT set its PTO timer for the application data
    packet number space until the handshake is confirmed.  Doing so
@@ -828,10 +832,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    The life of a connection that is experiencing consecutive PTOs is
    limited by the endpoint's idle timeout.
 
-   The probe timer MUST NOT be set if the time threshold (Section 6.1.2)
-   loss detection timer is set.  The time threshold loss detection timer
-   is expected to both expire earlier than the PTO and be less likely to
-   spuriously retransmit data.
 
 
 
@@ -841,6 +841,11 @@ Iyengar & Swett           Expires 5 March 2021                 [Page 15]
 
 Internet-Draft             QUIC Loss Detection            September 2020
 
+
+   The probe timer MUST NOT be set if the time threshold (Section 6.1.2)
+   loss detection timer is set.  The time threshold loss detection timer
+   is expected to both expire earlier than the PTO and be less likely to
+   spuriously retransmit data.
 
 6.2.2.  Handshakes and New Paths
 
@@ -884,11 +889,6 @@ Internet-Draft             QUIC Loss Detection            September 2020
    packets in flight.  When the PTO fires, the client MUST send a
    Handshake packet if it has Handshake keys, otherwise it MUST send an
    Initial packet in a UDP datagram of at least 1200 bytes.
-
-
-
-
-
 
 
 
