@@ -186,7 +186,7 @@ Internet-Draft           QUIC Transport Protocol          September 2020
        13.2.6.  ACK Frames and Packet Protection . . . . . . . . . .  89
        13.2.7.  PADDING Frames Consume Congestion Window . . . . . .  90
      13.3.  Retransmission of Information  . . . . . . . . . . . . .  90
-     13.4.  Explicit Congestion Notification . . . . . . . . . . . .  92
+     13.4.  Explicit Congestion Notification . . . . . . . . . . . .  93
        13.4.1.  ECN Counts . . . . . . . . . . . . . . . . . . . . .  93
        13.4.2.  ECN Validation . . . . . . . . . . . . . . . . . . .  94
    14. Packet Size . . . . . . . . . . . . . . . . . . . . . . . . .  96
@@ -5133,9 +5133,26 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    outdated frame, such as a MAX_DATA frame carrying a smaller maximum
    data than one found in an older packet.
 
+   A sender SHOULD avoid retransmitting information from packets once
+   they are acknowledged.  This includes packets that are acknowledged
+   after being declared lost, which can happen in the presence of
+   network reordering.  Doing so requires senders to retain information
+   about packets after they are declared lost.  A sender can discard
+   this information after a period of time elapses that adequately
+   allows for reordering, such as a PTO (Section 6.2 of
+   [QUIC-RECOVERY]), or on other events, such as reaching a memory
+   limit.
+
    Upon detecting losses, a sender MUST take appropriate congestion
    control action.  The details of loss detection and congestion control
    are described in [QUIC-RECOVERY].
+
+
+
+Iyengar & Thomson         Expires 5 March 2021                 [Page 92]
+
+Internet-Draft           QUIC Transport Protocol          September 2020
+
 
 13.4.  Explicit Congestion Notification
 
@@ -5145,14 +5162,6 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    codepoint in the IP header of a packet instead of dropping it.
    Endpoints react to congestion by reducing their sending rate in
    response, as described in [QUIC-RECOVERY].
-
-
-
-
-Iyengar & Thomson         Expires 5 March 2021                 [Page 92]
-
-Internet-Draft           QUIC Transport Protocol          September 2020
-
 
    Note that supporting ECN requires being able to set and read the ECN
    codepoints in the IP headers of datagrams carrying QUIC packets.  On
@@ -5189,15 +5198,6 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    received in the associated IP header are incremented once for each
    QUIC packet, not per enclosing IP packet or UDP datagram.
 
-   Each packet number space maintains separate acknowledgement state and
-   separate ECN counts.  For example, if one each of an Initial, 0-RTT,
-   Handshake, and 1-RTT QUIC packet are coalesced, the corresponding
-   counts for the Initial and Handshake packet number space will be
-   incremented by one and the counts for the application data packet
-   number space will be increased by two.
-
-
-
 
 
 
@@ -5209,6 +5209,13 @@ Iyengar & Thomson         Expires 5 March 2021                 [Page 93]
 
 Internet-Draft           QUIC Transport Protocol          September 2020
 
+
+   Each packet number space maintains separate acknowledgement state and
+   separate ECN counts.  For example, if one each of an Initial, 0-RTT,
+   Handshake, and 1-RTT QUIC packet are coalesced, the corresponding
+   counts for the Initial and Handshake packet number space will be
+   incremented by one and the counts for the application data packet
+   number space will be increased by two.
 
 13.4.2.  ECN Validation
 
@@ -5250,13 +5257,6 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    different marking strategies.  Implementations MAY use other methods
    defined in RFCs; see [RFC8311].  Implementations that use the ECT(1)
    codepoint need to perform ECN validation using ECT(1) counts.
-
-
-
-
-
-
-
 
 
 

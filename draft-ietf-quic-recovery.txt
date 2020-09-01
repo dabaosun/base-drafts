@@ -1614,10 +1614,10 @@ A.1.  Tracking Sent Packets
    by packet number and crypto context and store the per-packet fields
    (Appendix A.1.1) for loss recovery and congestion control.
 
-   After a packet is declared lost, the endpoint can track it for an
-   amount of time comparable to the maximum expected packet reordering,
-   such as 1 RTT.  This allows for detection of spurious
-   retransmissions.
+   After a packet is declared lost, the endpoint can still maintain
+   state for it for an amount of time to allow for packet reordering;
+   see Section 13.3 of [QUIC-TRANSPORT].  This enables a sender to
+   detect spurious retransmissions.
 
 
 
