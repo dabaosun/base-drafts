@@ -7980,6 +7980,10 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    CRYPTO_BUFFER_EXCEEDED (0xd):  An endpoint has received more data in
       CRYPTO frames than it can buffer.
 
+   AEAD_LIMIT_REACHED (0xE):  An endpoint has reached the
+      confidentiality or integrity limit for the AEAD algorithm used by
+      the given connection.
+
    CRYPTO_ERROR (0x1XX):  The cryptographic handshake failed.  A range
       of 256 values is reserved for carrying error codes specific to the
       cryptographic handshake that is used.  Codes for errors occurring
@@ -7996,10 +8000,6 @@ Internet-Draft           QUIC Transport Protocol          September 2020
    the stack, like flow control or transport parameter handling.
    Finally, generic errors are provided for conditions where
    implementations are unable or unwilling to use more specific codes.
-
-
-
-
 
 
 
