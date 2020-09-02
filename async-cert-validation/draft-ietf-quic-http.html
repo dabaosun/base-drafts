@@ -803,11 +803,11 @@ address div.right {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">HTTP/3</td>
-<td class="right">August 2020</td>
+<td class="right">September 2020</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Bishop</td>
-<td class="center">Expires 19 February 2021</td>
+<td class="center">Expires 6 March 2021</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -820,12 +820,12 @@ address div.right {
 <dd class="internet-draft">draft-ietf-quic-http-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2020-08-18" class="published">18 August 2020</time>
+<time datetime="2020-09-02" class="published">2 September 2020</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2021-02-19">19 February 2021</time></dd>
+<dd class="expires"><time datetime="2021-03-06">6 March 2021</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -875,7 +875,7 @@ code and issues list for this draft can be found at
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 19 February 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 6 March 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1524,8 +1524,8 @@ at different times.<a href="#section-2.2-6" class="pilcrow">¶</a></p>
         <h3 id="name-draft-version-identificatio">
 <a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-draft-version-identificatio" class="section-name selfRef">Draft Version Identification</a>
         </h3>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-3.1-1.1">
+<ul class="ulEmpty normal">
+<li class="ulEmpty normal" id="section-3.1-1.1">
             <strong>RFC Editor's Note:</strong>  Please remove this section prior to publication of a
 final version of this document.<a href="#section-3.1-1.1" class="pilcrow">¶</a>
 </li>
@@ -2100,8 +2100,9 @@ MAX_PUSH_ID frame; see <a href="#frame-max-push-id" class="xref">Section 7.2.7</
 able to push until after the client sends a MAX_PUSH_ID frame.  A client sends
 MAX_PUSH_ID frames to control the number of pushes that a server can promise.  A
 server SHOULD use Push IDs sequentially, beginning from zero.  A client MUST
-treat receipt of a push stream with a Push ID that is greater than the maximum
-Push ID as a connection error of type H3_ID_ERROR.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
+treat receipt of a push stream as a connection error of type H3_ID_ERROR when no
+MAX_PUSH_ID frame has been sent or when the stream references a Push ID that is
+greater than the maximum Push ID.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
 <p id="section-4.4-4">The Push ID is used in one or more PUSH_PROMISE frames (<a href="#frame-push-promise" class="xref">Section 7.2.5</a>)
 that carry the header section of the request message.  These frames are sent on
 the request stream that generated the push.  This allows the server push to be
@@ -2836,8 +2837,12 @@ least one such setting in their SETTINGS frame. Endpoints MUST NOT consider such
 settings to have any meaning upon receipt.<a href="#section-7.2.4.1-3" class="pilcrow">¶</a></p>
 <p id="section-7.2.4.1-4">Because the setting has no defined meaning, the value of the setting can be any
 value the implementation selects.<a href="#section-7.2.4.1-4" class="pilcrow">¶</a></p>
-<p id="section-7.2.4.1-5">Additional settings can be defined by extensions to HTTP/3; see <a href="#extensions" class="xref">Section 9</a>
-for more details.<a href="#section-7.2.4.1-5" class="pilcrow">¶</a></p>
+<p id="section-7.2.4.1-5">Setting identifiers which were used in HTTP/2 where there is no corresponding
+HTTP/3 setting have also been reserved (<a href="#iana-settings" class="xref">Section 11.2.2</a>). These settings MUST
+NOT be sent, and their receipt MUST be treated as a connection error of type
+H3_SETTINGS_ERROR.<a href="#section-7.2.4.1-5" class="pilcrow">¶</a></p>
+<p id="section-7.2.4.1-6">Additional settings can be defined by extensions to HTTP/3; see <a href="#extensions" class="xref">Section 9</a>
+for more details.<a href="#section-7.2.4.1-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="settings-initialization">
@@ -2921,7 +2926,7 @@ PUSH_PROMISE Frame {
             <dt id="section-7.2.5-4.1">Push ID:</dt>
             <dd id="section-7.2.5-4.2">
   A variable-length integer that identifies the server push operation.  A Push
-ID is used in push stream headers (<a href="#server-push" class="xref">Section 4.4</a>), CANCEL_PUSH frames
+ID is used in push stream headers (<a href="#server-push" class="xref">Section 4.4</a>) and CANCEL_PUSH frames
 (<a href="#frame-cancel-push" class="xref">Section 7.2.3</a>).<a href="#section-7.2.5-4.2" class="pilcrow">¶</a>
 </dd>
             <dd class="break"></dd>
@@ -3015,19 +3020,19 @@ a MAX_PUSH_ID frame as a connection error of type H3_FRAME_UNEXPECTED.<a href="#
 cannot push until it receives a MAX_PUSH_ID frame.  A client that wishes to
 manage the number of promised server pushes can increase the maximum Push ID by
 sending MAX_PUSH_ID frames as the server fulfills or cancels server pushes.<a href="#section-7.2.7-4" class="pilcrow">¶</a></p>
-<span id="name-max_push_id-frame-payload"></span><div id="fig-max-push">
+<span id="name-max_push_id-frame"></span><div id="fig-max-push">
 <figure id="figure-10">
             <div class="artwork art-text alignLeft art-drawing" id="section-7.2.7-5.1">
 <pre>
 MAX_PUSH_ID Frame {
-  Type (i) = 0x1,
+  Type (i) = 0xD,
   Length (i),
   Push ID (i),
 }
 </pre>
 </div>
 <figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
-<a href="#name-max_push_id-frame-payload" class="selfRef">MAX_PUSH_ID Frame Payload</a>
+<a href="#name-max_push_id-frame" class="selfRef">MAX_PUSH_ID Frame</a>
             </figcaption></figure>
 </div>
 <p id="section-7.2.7-6">The MAX_PUSH_ID frame carries a single variable-length integer that identifies
@@ -3052,7 +3057,8 @@ consider these frames to have any meaning upon receipt.<a href="#section-7.2.8-1
 implementation chooses.<a href="#section-7.2.8-2" class="pilcrow">¶</a></p>
 <p id="section-7.2.8-3">Frame types that were used in HTTP/2 where there is no corresponding HTTP/3
 frame have also been reserved (<a href="#iana-frames" class="xref">Section 11.2.1</a>).  These frame types MUST NOT be
-sent, and receipt MAY be treated as an error of type H3_FRAME_UNEXPECTED.<a href="#section-7.2.8-3" class="pilcrow">¶</a></p>
+sent, and their receipt MUST be treated as a connection error of type
+H3_FRAME_UNEXPECTED.<a href="#section-7.2.8-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -3992,7 +3998,7 @@ NOT be assigned by IANA.<a href="#section-11.2.4-7" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="CACHING">[CACHING]</dt>
         <dd>
-<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP Caching"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-cache-10</span>, <time datetime="2020-07-12" class="refDate">12 July 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-cache-10.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-cache-10.txt</a>&gt;</span>. </dd>
+<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP Caching"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-cache-11</span>, <time datetime="2020-08-27" class="refDate">27 August 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-cache-11.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-cache-11.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="HTTP-REPLAY">[HTTP-REPLAY]</dt>
         <dd>
@@ -4000,11 +4006,11 @@ NOT be assigned by IANA.<a href="#section-11.2.4-7" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="QPACK">[QPACK]</dt>
         <dd>
-<span class="refAuthor">Krasic, C.</span><span class="refAuthor">, Bishop, M.</span><span class="refAuthor">, and A. Frindell, Ed.</span>, <span class="refTitle">"QPACK: Header Compression for HTTP over QUIC"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qpack-latest</span>, <time datetime="2020-08-18" class="refDate">18 August 2020</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-quic-qpack-latest">https://tools.ietf.org/html/draft-ietf-quic-qpack-latest</a>&gt;</span>. </dd>
+<span class="refAuthor">Krasic, C.</span><span class="refAuthor">, Bishop, M.</span><span class="refAuthor">, and A. Frindell, Ed.</span>, <span class="refTitle">"QPACK: Header Compression for HTTP over QUIC"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qpack-latest</span>, <time datetime="2020-09-02" class="refDate">2 September 2020</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-quic-qpack-latest">https://tools.ietf.org/html/draft-ietf-quic-qpack-latest</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-TRANSPORT">[QUIC-TRANSPORT]</dt>
         <dd>
-<span class="refAuthor">Iyengar, J., Ed.</span><span class="refAuthor"> and M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-transport-latest</span>, <time datetime="2020-08-18" class="refDate">18 August 2020</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-quic-transport-latest">https://tools.ietf.org/html/draft-ietf-quic-transport-latest</a>&gt;</span>. </dd>
+<span class="refAuthor">Iyengar, J., Ed.</span><span class="refAuthor"> and M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-transport-latest</span>, <time datetime="2020-09-02" class="refDate">2 September 2020</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-ietf-quic-transport-latest">https://tools.ietf.org/html/draft-ietf-quic-transport-latest</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC0793">[RFC0793]</dt>
         <dd>
@@ -4048,7 +4054,7 @@ NOT be assigned by IANA.<a href="#section-11.2.4-7" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="SEMANTICS">[SEMANTICS]</dt>
       <dd>
-<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-semantics-10</span>, <time datetime="2020-07-12" class="refDate">12 July 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-semantics-10.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-semantics-10.txt</a>&gt;</span>. </dd>
+<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-semantics-11</span>, <time datetime="2020-08-27" class="refDate">27 August 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-semantics-11.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-semantics-11.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -4067,7 +4073,7 @@ NOT be assigned by IANA.<a href="#section-11.2.4-7" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="HTTP11">[HTTP11]</dt>
         <dd>
-<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP/1.1 Messaging"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-messaging-10</span>, <time datetime="2020-07-12" class="refDate">12 July 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-messaging-10.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-messaging-10.txt</a>&gt;</span>. </dd>
+<span class="refAuthor">Fielding, R.</span><span class="refAuthor">, Nottingham, M.</span><span class="refAuthor">, and J. Reschke</span>, <span class="refTitle">"HTTP/1.1 Messaging"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-httpbis-messaging-11</span>, <time datetime="2020-08-27" class="refDate">27 August 2020</time>, <span>&lt;<a href="http://www.ietf.org/internet-drafts/draft-ietf-httpbis-messaging-11.txt">http://www.ietf.org/internet-drafts/draft-ietf-httpbis-messaging-11.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="HTTP2">[HTTP2]</dt>
         <dd>
@@ -4293,8 +4299,10 @@ equivalent HTTP/2 code points.  See <a href="#iana-frames" class="xref">Section 
 frame of the control stream, and thereafter cannot change.  This eliminates many
 corner cases around synchronization of changes.<a href="#section-a.3-1" class="pilcrow">¶</a></p>
 <p id="section-a.3-2">Some transport-level options that HTTP/2 specifies via the SETTINGS frame are
-superseded by QUIC transport parameters in HTTP/3. The HTTP-level options that
-are retained in HTTP/3 have the same value as in HTTP/2.<a href="#section-a.3-2" class="pilcrow">¶</a></p>
+superseded by QUIC transport parameters in HTTP/3.  The HTTP-level options that
+are retained in HTTP/3 have the same value as in HTTP/2.  The superseded
+settings are reserved, and their receipt is an error.  See
+<a href="#settings-parameters" class="xref">Section 7.2.4.1</a> for discussion of both the retained and reserved values.<a href="#section-a.3-2" class="pilcrow">¶</a></p>
 <p id="section-a.3-3">Below is a listing of how each HTTP/2 SETTINGS parameter is mapped:<a href="#section-a.3-3" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-a.3-4">
           <dt id="section-a.3-4.1">SETTINGS_HEADER_TABLE_SIZE:</dt>
@@ -4305,33 +4313,37 @@ are retained in HTTP/3 have the same value as in HTTP/2.<a href="#section-a.3-2"
 <dt id="section-a.3-4.3">SETTINGS_ENABLE_PUSH:</dt>
           <dd id="section-a.3-4.4">
   This is removed in favor of the MAX_PUSH_ID frame, which provides a more
-granular control over server push.<a href="#section-a.3-4.4" class="pilcrow">¶</a>
+granular control over server push.  Specifying a setting with the identifier
+0x2 (corresponding to the SETTINGS_ENABLE_PUSH parameter) in the HTTP/3
+SETTINGS frame is an error.<a href="#section-a.3-4.4" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-a.3-4.5">SETTINGS_MAX_CONCURRENT_STREAMS:</dt>
           <dd id="section-a.3-4.6">
   QUIC controls the largest open Stream ID as part of its flow control logic.
-Specifying the SETTINGS_MAX_CONCURRENT_STREAMS parameter in the SETTINGS frame
-is an error.<a href="#section-a.3-4.6" class="pilcrow">¶</a>
+Specifying a setting with the identifier 0x3 (corresponding to the
+SETTINGS_MAX_CONCURRENT_STREAMS parameter) in the HTTP/3 SETTINGS frame is an
+error.<a href="#section-a.3-4.6" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-a.3-4.7">SETTINGS_INITIAL_WINDOW_SIZE:</dt>
           <dd id="section-a.3-4.8">
   QUIC requires both stream and connection flow control window sizes to be
-specified in the initial transport handshake.  Specifying the
-SETTINGS_INITIAL_WINDOW_SIZE parameter in the SETTINGS frame is an error.<a href="#section-a.3-4.8" class="pilcrow">¶</a>
+specified in the initial transport handshake.  Specifying a setting with the
+identifier 0x4 (corresponding to the SETTINGS_INITIAL_WINDOW_SIZE parameter)
+in the HTTP/3 SETTINGS frame is an error.<a href="#section-a.3-4.8" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-a.3-4.9">SETTINGS_MAX_FRAME_SIZE:</dt>
           <dd id="section-a.3-4.10">
-  This setting has no equivalent in HTTP/3.  Specifying it in the SETTINGS frame
-is an error.<a href="#section-a.3-4.10" class="pilcrow">¶</a>
+  This setting has no equivalent in HTTP/3.  Specifying a setting with the
+identifier 0x5 (corresponding to the SETTINGS_MAX_FRAME_SIZE parameter) in the
+HTTP/3 SETTINGS frame is an error.<a href="#section-a.3-4.10" class="pilcrow">¶</a>
 </dd>
           <dd class="break"></dd>
 <dt id="section-a.3-4.11">SETTINGS_MAX_HEADER_LIST_SIZE:</dt>
           <dd id="section-a.3-4.12">
-  This setting identifier has been renamed SETTINGS_MAX_FIELD_SECTION_SIZE.  See
-<a href="#settings-parameters" class="xref">Section 7.2.4.1</a>.<a href="#section-a.3-4.12" class="pilcrow">¶</a>
+  This setting identifier has been renamed SETTINGS_MAX_FIELD_SECTION_SIZE.<a href="#section-a.3-4.12" class="pilcrow">¶</a>
 </dd>
         <dd class="break"></dd>
 </dl>
@@ -4479,8 +4491,8 @@ what might be a temporary or intermittent error.<a href="#section-a.4.1-4" class
       <h2 id="name-change-log">
 <a href="#section-appendix.b" class="section-number selfRef">Appendix B. </a><a href="#name-change-log" class="section-name selfRef">Change Log</a>
       </h2>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-appendix.b-1.1">
+<ul class="ulEmpty normal">
+<li class="ulEmpty normal" id="section-appendix.b-1.1">
           <strong>RFC Editor's Note:</strong>  Please remove this section prior to publication of a
 final version of this document.<a href="#section-appendix.b-1.1" class="pilcrow">¶</a>
 </li>
